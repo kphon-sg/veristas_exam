@@ -15,7 +15,7 @@ Buoc 5: Chay du an Backend (Java):
 - Mo Terminal PowerShell trong VS Code.
 - Chay cac lenh sau:
   cd software-java
-  .\mvnw.cmd spring-boot:run
+  mvn spring-boot:run
 
 -----------------------------------------------------------
 Giai thich cac loi thuong gap:

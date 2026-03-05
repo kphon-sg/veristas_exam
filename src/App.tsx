@@ -497,6 +497,26 @@ export default function App() {
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-6">
                 {user && <NotificationCenter user={user} onUpdate={fetchAvailableClasses} />}
+                
+                {user?.role === 'STUDENT' && examState.status === 'idle' && (
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => setIsViewingHistory(true)}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-white/10 text-white"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span className="hidden md:inline">History</span>
+                    </button>
+                    <button 
+                      onClick={() => setIsSearchingCourse(true)}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-white/10 text-white"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      <span className="hidden md:inline">Join Course</span>
+                    </button>
+                  </div>
+                )}
+
                 {examState.status === 'running' && (
                   <div className="text-right">
                     <div className="text-[10px] font-mono text-teal-100 uppercase font-bold">Remaining Time</div>
@@ -684,20 +704,6 @@ export default function App() {
                     <div className="portal-card shadow-sm">
                       <div className="portal-card-header flex items-center justify-between">
                         <span>My Courses</span>
-                        <button 
-                          onClick={() => setIsViewingHistory(true)}
-                          className="flex items-center gap-2 px-4 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-white/10 mr-2"
-                        >
-                          <Clock className="w-3.5 h-3.5" />
-                          History
-                        </button>
-                        <button 
-                          onClick={() => setIsSearchingCourse(true)}
-                          className="flex items-center gap-2 px-4 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
-                        >
-                          <Search className="w-3.5 h-3.5" />
-                          Join Course
-                        </button>
                       </div>
                       <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                         {availableClasses.map(course => (
