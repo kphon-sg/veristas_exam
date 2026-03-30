@@ -1,69 +1,62 @@
--- SEED DATA FOR VERITAS ACADEMY (edge_ai_exam)
--- This script provides a large set of sample data for testing purposes.
+-- Seed data for Edge AI Exam System
+-- Database: edge_ai_exam
 
--- 1. TEACHERS (15 Teachers)
-INSERT IGNORE INTO users (username, full_name, email, password, role) VALUES
-('teacher1', 'Dr. Alan Turing', 'teacher1@edu.com', 'password123', 'TEACHER'),
-('teacher2', 'Prof. Grace Hopper', 'teacher2@edu.com', 'password123', 'TEACHER'),
-('teacher3', 'Dr. Margaret Hamilton', 'teacher3@edu.com', 'password123', 'TEACHER'),
-('teacher4', 'Prof. Donald Knuth', 'teacher4@edu.com', 'password123', 'TEACHER'),
-('teacher5', 'Dr. Barbara Liskov', 'teacher5@edu.com', 'password123', 'TEACHER'),
-('teacher6', 'Prof. Ken Thompson', 'teacher6@edu.com', 'password123', 'TEACHER'),
-('teacher7', 'Dr. Adele Goldberg', 'teacher7@edu.com', 'password123', 'TEACHER'),
-('teacher8', 'Prof. Niklaus Wirth', 'teacher8@edu.com', 'password123', 'TEACHER'),
-('teacher9', 'Dr. Shafi Goldwasser', 'teacher9@edu.com', 'password123', 'TEACHER'),
-('teacher10', 'Prof. Leslie Lamport', 'teacher10@edu.com', 'password123', 'TEACHER'),
-('teacher11', 'Dr. Silvio Micali', 'teacher11@edu.com', 'password123', 'TEACHER'),
-('teacher12', 'Prof. Judea Pearl', 'teacher12@edu.com', 'password123', 'TEACHER'),
-('teacher13', 'Dr. Yann LeCun', 'teacher13@edu.com', 'password123', 'TEACHER'),
-('teacher14', 'Prof. Geoffrey Hinton', 'teacher14@edu.com', 'password123', 'TEACHER'),
-('teacher15', 'Dr. Yoshua Bengio', 'teacher15@edu.com', 'password123', 'TEACHER');
+-- 1. Users (Passwords are '123' for all)
+INSERT INTO users (id, username, student_code, full_name, email, password, role) VALUES 
+(1, 'teacher_phong', NULL, 'Chu Kong Phong', 'phong@edu.com', '123', 'TEACHER'),
+(2, 'student_grace', 'ITIU21045', 'Grace Hopper', 'grace@edu.com', '123', 'STUDENT'),
+(3, 'student_ada', 'ITIU22231', 'Ada Lovelace', 'ada@edu.com', '123', 'STUDENT'),
+(4, 'student_linus', 'SEIU23145', 'Linus Torvalds', 'linus@edu.com', '123', 'STUDENT'),
+(5, 'teacher_nguyen', NULL, 'Nguyễn Văn A', 'nguyenvana@edu.com', '123', 'TEACHER');
 
--- 2. COURSES (25 Courses)
--- Note: teacher_id values assume the teachers above are the first 15 teachers in the DB.
--- In a real scenario, you would match the IDs.
-INSERT IGNORE INTO courses (course_code, name, description, teacher_id) VALUES
-('CS101', 'Intro to Computer Science', 'Fundamental concepts of computing.', 1),
-('CS102', 'Data Structures', 'Advanced organization and storage of data.', 2),
-('CS201', 'Algorithms', 'Design and analysis of efficient procedures.', 3),
-('CS202', 'Operating Systems', 'Principles of OS design and implementation.', 4),
-('CS301', 'Artificial Intelligence', 'Introduction to machine learning and AI.', 5),
-('CS302', 'Database Systems', 'Relational models and SQL optimization.', 6),
-('IT101', 'Web Development', 'Building modern responsive web applications.', 7),
-('IT102', 'Network Security', 'Protecting systems from cyber threats.', 8),
-('IT201', 'Cloud Computing', 'Scalable infrastructure and microservices.', 9),
-('IT202', 'Mobile App Dev', 'iOS and Android development with React Native.', 10),
-('MATH101', 'Calculus I', 'Limits, derivatives, and integrals.', 11),
-('MATH102', 'Linear Algebra', 'Vector spaces and matrix operations.', 12),
-('PHY101', 'Physics I', 'Mechanics and thermodynamics.', 13),
-('PHY102', 'Quantum Mechanics', 'Introduction to subatomic particles.', 14),
-('BIO101', 'Molecular Biology', 'Study of life at the molecular level.', 15),
-('BIO102', 'Genetics', 'Principles of heredity and variation.', 1),
-('ENG101', 'English Literature', 'Classic works of the Western canon.', 2),
-('ENG102', 'Creative Writing', 'Workshop for fiction and poetry.', 3),
-('HIS101', 'World History', 'Global events from antiquity to modern era.', 4),
-('HIS102', 'History of Science', 'Evolution of scientific thought.', 5),
-('ART101', 'Art History', 'Visual arts through the ages.', 6),
-('ART102', 'Digital Illustration', 'Modern techniques for digital art.', 7),
-('MUS101', 'Music Theory', 'Foundations of harmony and rhythm.', 8),
-('MUS102', 'Composition', 'Creating original musical works.', 9),
-('PE101', 'Physical Education', 'Health, fitness, and team sports.', 10);
+-- 2. Courses
+INSERT INTO courses (id, course_code, course_name, description, school_name, education_level, teacher_id, teacher_name) VALUES 
+(1, 'IT101', 'Lập trình cơ bản', 'Nền tảng logic sử dụng Python.', 'Đại học Bách Khoa', 'UNIVERSITY', 1, 'Chu Kong Phong'),
+(2, 'IT303', 'Hệ quản trị cơ sở dữ liệu', 'Mô hình quan hệ và SQL.', 'Đại học Bách Khoa', 'UNIVERSITY', 1, 'Chu Kong Phong'),
+(3, 'AI101', 'Trí tuệ nhân tạo', 'Giới thiệu về AI và Machine Learning.', 'Đại học Công nghệ', 'UNIVERSITY', 5, 'Nguyễn Văn A');
 
--- 3. STUDENTS (Sample of 200 Students)
--- Showing first 10 for brevity, the full script would have 200.
-INSERT IGNORE INTO users (username, student_code, full_name, email, password, role) VALUES
-('student1', 'STU1001', 'Nguyen Van A', 'student1@edu.com', 'password123', 'STUDENT'),
-('student2', 'STU1002', 'Tran Thi B', 'student2@edu.com', 'password123', 'STUDENT'),
-('student3', 'STU1003', 'Le Van C', 'student3@edu.com', 'password123', 'STUDENT'),
-('student4', 'STU1004', 'Pham Thi D', 'student4@edu.com', 'password123', 'STUDENT'),
-('student5', 'STU1005', 'Hoang Van E', 'student5@edu.com', 'password123', 'STUDENT'),
-('student6', 'STU1006', 'Vu Thi F', 'student6@edu.com', 'password123', 'STUDENT'),
-('student7', 'STU1007', 'Dang Van G', 'student7@edu.com', 'password123', 'STUDENT'),
-('student8', 'STU1008', 'Bui Thi H', 'student8@edu.com', 'password123', 'STUDENT'),
-('student9', 'STU1009', 'Do Van I', 'student9@edu.com', 'password123', 'STUDENT'),
-('student10', 'STU1010', 'Ngo Thi K', 'student10@edu.com', 'password123', 'STUDENT');
--- ... (Repeat up to student200)
+-- 3. Enrollments
+INSERT INTO course_enrollments (course_id, student_id) VALUES 
+(1, 2),
+(2, 2),
+(2, 3),
+(1, 4);
 
--- 4. COURSE ENROLLMENTS (Sample)
--- INSERT IGNORE INTO course_enrollments (course_id, student_id) VALUES
--- (1, 16), (1, 17), (1, 18), (1, 19), (1, 20), ... (20-50 per course)
+-- 4. Quizzes
+INSERT INTO quizzes (id, title, description, duration_minutes, course_id, teacher_id, course_name, teacher_name, deadline, status, total_score, published_at) VALUES 
+(1, 'Kiểm tra Python cơ bản', 'Cú pháp và logic cơ bản', 30, 1, 1, 'Lập trình cơ bản', 'Chu Kong Phong', '2026-12-31 23:59:59', 'PUBLISHED', 10.0, NOW()),
+(2, 'SQL Joins Mastery', 'Truy vấn phức tạp và joins', 45, 2, 1, 'Hệ quản trị cơ sở dữ liệu', 'Chu Kong Phong', '2026-12-31 23:59:59', 'PUBLISHED', 10.0, NOW());
+
+-- 5. Questions
+INSERT INTO questions (id, quiz_id, question_text, question_type, points, sort_order) VALUES 
+(1, 1, 'Kết quả của 2 ** 3 trong Python là gì?', 'MULTIPLE_CHOICE', 2.0, 1),
+(2, 1, 'Giải thích sự khác biệt giữa List và Tuple.', 'ESSAY', 5.0, 2),
+(3, 2, 'JOIN nào trả về tất cả các bản ghi khi có sự khớp ở bảng trái hoặc phải?', 'MULTIPLE_CHOICE', 2.0, 1);
+
+-- 6. Options
+INSERT INTO question_options (id, question_id, option_text, is_correct) VALUES 
+(1, 1, '6', 0),
+(2, 1, '8', 1),
+(3, 1, '9', 0),
+(4, 1, '5', 0),
+(5, 3, 'INNER JOIN', 0),
+(6, 3, 'LEFT JOIN', 0),
+(7, 3, 'FULL OUTER JOIN', 1),
+(8, 3, 'RIGHT JOIN', 0);
+
+-- 7. Submissions
+INSERT INTO submissions (id, quiz_id, student_id, quiz_name, start_time, end_time, submitted_at, duration_seconds, status, total_score, score, cheating_status, risk_score) VALUES 
+(1, 1, 2, 'Kiểm tra Python cơ bản', '2026-03-01 10:00:00', '2026-03-01 10:15:00', '2026-03-01 10:15:00', 900, 'GRADED', 7.0, 6.0, 'NO_CHEATING', 5.0),
+(2, 2, 2, 'SQL Joins Mastery', '2026-03-01 11:00:00', '2026-03-01 11:30:00', '2026-03-01 11:30:00', 1800, 'SUBMITTED', 2.0, 0.0, 'SUSPICIOUS', 45.0);
+
+-- 8. Student Answers
+INSERT INTO student_answers (submission_id, question_id, selected_option_id, answer_text, awarded_points) VALUES 
+(1, 1, 2, NULL, 2.0),
+(1, 2, NULL, 'List là mutable còn Tuple là immutable.', 4.0),
+(2, 3, 7, NULL, 2.0);
+
+-- 9. Activities
+INSERT INTO activities (user_id, action_type, entity_type, entity_id, details) VALUES 
+(1, 'QUIZ_CREATED', 'QUIZ', 1, 'Giảng viên Chu Kong Phong đã tạo bài kiểm tra "Kiểm tra Python cơ bản" cho khóa học IT101 - Lập trình cơ bản'),
+(2, 'QUIZ_STARTED', 'QUIZ', 1, 'Sinh viên Grace Hopper đã bắt đầu làm bài kiểm tra "Kiểm tra Python cơ bản"'),
+(2, 'QUIZ_SUBMITTED', 'QUIZ', 1, 'Sinh viên Grace Hopper đã nộp bài kiểm tra "Kiểm tra Python cơ bản". Điểm: 6.0/10.0');

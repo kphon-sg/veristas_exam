@@ -26,22 +26,34 @@ CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     student_code VARCHAR(20) UNIQUE,
-    full_name VARCHAR(100),
+    full_name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role ENUM('TEACHER', 'STUDENT') NOT NULL,
+    role ENUM('TEACHER', 'STUDENT', 'OTHER') NOT NULL,
+    age INT,
+    school_institution VARCHAR(255),
+    country_location VARCHAR(100),
+    usage_reason VARCHAR(255),
+    is_verified BOOLEAN DEFAULT FALSE,
+    verification_token VARCHAR(255),
+    reset_token VARCHAR(255),
+    reset_token_expiry DATETIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 -- 4. Courses Table
 CREATE TABLE courses (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    course_code VARCHAR(20) NOT NULL UNIQUE, -- e.g., 'IT101'
-    name VARCHAR(100) NOT NULL,
+    course_code VARCHAR(20) NOT NULL, -- e.g., 'IT101'
+    course_name VARCHAR(100) NOT NULL,
     description TEXT,
+    school_name VARCHAR(255),
+    education_level ENUM('PRIMARY_SCHOOL', 'SECONDARY_SCHOOL', 'HIGH_SCHOOL', 'UNIVERSITY'),
     teacher_id INT NOT NULL,
+    teacher_name VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE RESTRICT
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE RESTRICT,
+    UNIQUE (teacher_id, course_code)
 ) ENGINE=InnoDB;
 
 -- 5. Course Enrollments
@@ -63,7 +75,11 @@ CREATE TABLE quizzes (
     duration_minutes INT NOT NULL,
     course_id INT NOT NULL,
     teacher_id INT NOT NULL,
+    course_name VARCHAR(100),
+    teacher_name VARCHAR(100),
     deadline DATETIME,
+    open_at DATETIME,
+    close_at DATETIME,
     status ENUM('DRAFT', 'PUBLISHED', 'DELETED') DEFAULT 'DRAFT',
     total_score DECIMAL(5,2) DEFAULT 0.0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -214,18 +230,18 @@ INSERT INTO users (id, username, student_code, full_name, email, password, role)
 (5, 'chukongphong', 'TCIU002', 'Chu Kong Phong', 'chukongphong@gmail.com', '123', 'TEACHER');
 
 -- 2. Courses
-INSERT INTO courses (id, course_code, name, description, teacher_id) VALUES 
-(1, 'IT101', 'Introduction to Programming', 'Foundations of logic using Python.', 1),
-(2, 'IT303', 'Database Systems', 'Relational modeling and SQL mastery.', 1);
+INSERT INTO courses (id, course_code, course_name, description, school_name, education_level, teacher_id, teacher_name) VALUES 
+(1, 'IT101', 'Introduction to Programming', 'Foundations of logic using Python.', 'Veritas University', 'UNIVERSITY', 1, 'Dr. Alan Turing'),
+(2, 'IT303', 'Database Systems', 'Relational modeling and SQL mastery.', 'Veritas University', 'UNIVERSITY', 1, 'Dr. Alan Turing');
 
 -- 3. Enrollments
 INSERT INTO course_enrollments (course_id, student_id) VALUES 
 (1, 2), (2, 2), (2, 3), (1, 4);
 
 -- 4. Quizzes
-INSERT INTO quizzes (id, title, description, duration_minutes, course_id, teacher_id, deadline, status, total_score, published_at) VALUES 
-(1, 'Python Basics Quiz', 'Basic syntax and logic', 30, 1, 1, '2026-12-31 23:59:59', 'PUBLISHED', 10.0, NOW()),
-(2, 'SQL Joins Mastery', 'Complex queries and joins', 45, 2, 1, '2026-12-31 23:59:59', 'PUBLISHED', 10.0, NOW());
+INSERT INTO quizzes (id, title, description, duration_minutes, course_id, teacher_id, course_name, teacher_name, deadline, status, total_score, published_at) VALUES 
+(1, 'Python Basics Quiz', 'Basic syntax and logic', 30, 1, 1, 'Introduction to Programming', 'Dr. Alan Turing', '2026-12-31 23:59:59', 'PUBLISHED', 10.0, NOW()),
+(2, 'SQL Joins Mastery', 'Complex queries and joins', 45, 2, 1, 'Database Systems', 'Dr. Alan Turing', '2026-12-31 23:59:59', 'PUBLISHED', 10.0, NOW());
 
 -- 5. Questions
 INSERT INTO questions (id, quiz_id, question_text, question_type, points, sort_order) VALUES 

@@ -1,9 +1,11 @@
 export interface MonitoringEvent {
   id: string;
   timestamp: number;
-  type: 'face_missing' | 'multiple_faces' | 'looking_away' | 'tab_switch' | 'app_blur';
-  severity: 'low' | 'medium' | 'high';
+  endTime?: number;
+  type: 'face_missing' | 'multiple_faces' | 'looking_away' | 'tab_switch' | 'app_blur' | 'valid';
+  severity: 'low' | 'medium' | 'high' | 'none';
   message: string;
+  snapshot?: string;
 }
 
 export interface AIStats {
@@ -19,4 +21,12 @@ export interface ExamState {
   remainingTime: number; // in seconds
   status: 'idle' | 'running' | 'paused' | 'finished';
   startTime?: string;
+  endTime?: number; // timestamp in ms
+}
+
+export interface StudentStats {
+  totalAssigned: number;
+  completedCount: number;
+  pendingCount: number;
+  averageScore: number;
 }

@@ -1,30 +1,26 @@
 # Hướng dẫn chạy dự án Edge AI Exam Monitor
 
-Dự án bao gồm 2 phần chính:
-1. **Frontend**: React + TypeScript (Giao diện web cho sinh viên).
-2. **Backend/Software**: Java Spring Boot (Phần mềm quản lý và giám sát).
+Dự án bao gồm:
+1. **Frontend**: React + TypeScript (Giao diện web cho sinh viên và giáo viên).
+2. **Backend**: Node.js + Express (Hệ thống quản lý và giám sát).
 
 ## 1. Yêu cầu hệ thống
 - **Node.js**: v18+ 
-- **Java JDK**: 17+
+- **MySQL**: 8.0+
 - **IDE**: Visual Studio Code
 
-## 2. Cách chạy phần Web (Frontend)
+## 2. Cách chạy dự án
 1. Mở thư mục gốc trong VS Code.
 2. Mở Terminal (`Ctrl + ` `).
-3. Chạy lệnh:
+3. Chạy lệnh cài đặt:
    ```bash
    npm install
+   ```
+4. Chạy dự án:
+   ```bash
    npm run dev
    ```
-4. Truy cập: `http://localhost:3000`
-
-## 3. Cách chạy phần Software (Java Backend)
-1. Cài đặt extension `Extension Pack for Java` trong VS Code.
-2. Mở thư mục `software-java`.
-3. Tìm file `src/main/java/com/edgeai/monitor/EdgeAiApplication.java`.
-4. Nhấn nút **Run** phía trên hàm `main`.
-5. Backend sẽ chạy tại: `http://localhost:8080`
+5. Truy cập: `http://localhost:3000`
 
 ## 4. Các tính năng mô phỏng trong Prototype
 - **Nhận diện khuôn mặt**: Tự động cảnh báo nếu không thấy mặt hoặc có nhiều mặt.

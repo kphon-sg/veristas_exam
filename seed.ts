@@ -73,7 +73,7 @@ async function seed() {
 
     console.log("Inserting courses...");
     await pool.query(
-      "INSERT IGNORE INTO courses (course_code, name, description, teacher_id) VALUES ?",
+      "INSERT IGNORE INTO courses (course_code, course_name, description, teacher_id) VALUES ?",
       [courses]
     );
 
@@ -106,6 +106,187 @@ async function seed() {
         [chunk]
       );
     }
+
+    // 5. Generate Quizzes
+    const quizzes = [];
+    for (const courseId of courseIds) {
+      const teacherId = teacherIds[courseId % teacherIds.length];
+      quizzes.push([
+        `Midterm Exam for Course ${courseId}`,
+        `Comprehensive midterm evaluation for course ${courseId}.`,
+        60,
+        courseId,
+        teacherId,
+        'PUBLISHED',
+        100.0,
+        new Date()
+      ]);
+      quizzes.push([
+        `Final Project Quiz ${courseId}`,
+        `Final assessment for course ${courseId}.`,
+        120,
+        courseId,
+        teacherId,
+        'PUBLISHED',
+        100.0,
+        new Date()
+      ]);
+    }
+
+    console.log("Inserting quizzes...");
+    await pool.query(
+      "INSERT IGNORE INTO quizzes (title, description, duration_minutes, course_id, teacher_id, status, total_score, published_at) VALUES ?",
+      [quizzes]
+    );
+
+    // Get Quiz IDs
+    const [quizRows] = await pool.query("SELECT id FROM quizzes");
+    const quizIds = (quizRows as any[]).map(r => r.id);
+
+    // 6. Generate Questions
+    const questions = [];
+    for (const quizId of quizIds) {
+      for (let i = 1; i <= 5; i++) {
+        questions.push([
+          quizId,
+          `Question ${i} for Quiz ${quizId}: What is the fundamental concept of this topic?`,
+          'MULTIPLE_CHOICE',
+          20.0,
+          i
+        ]);
+      }
+    }
+
+    console.log("Inserting questions...");
+    await pool.query(
+      "INSERT IGNORE INTO questions (quiz_id, question_text, question_type, points, sort_order) VALUES ?",
+      [questions]
+    );
+
+    // Get Question IDs
+    const [questionRows] = await pool.query("SELECT id FROM questions");
+    const questionIds = (questionRows as any[]).map(r => r.id);
+
+    // 7. Generate Options
+    const options = [];
+    for (const questionId of questionIds) {
+      for (let i = 1; i <= 4; i++) {
+        options.push([
+          questionId,
+          `Option ${i} for Question ${questionId}`,
+          i === 1 ? 1 : 0 // First option is correct
+        ]);
+      }
+    }
+
+    console.log("Inserting options...");
+    const optionChunkSize = 1000;
+    for (let i = 0; i < options.length; i += optionChunkSize) {
+      const chunk = options.slice(i, i + optionChunkSize);
+      await pool.query(
+        "INSERT IGNORE INTO question_options (question_id, option_text, is_correct) VALUES ?",
+        [chunk]
+      );
+    }
+
+    // 8. Generate Submissions
+    const submissions = [];
+    for (let i = 0; i < 500; i++) {
+      const quizId = quizIds[Math.floor(Math.random() * quizIds.length)];
+      const studentId = studentIds[Math.floor(Math.random() * studentIds.length)];
+      const status = ['GRADED', 'SUBMITTED', 'IN_PROGRESS'][Math.floor(Math.random() * 3)];
+      const cheatingStatus = ['NO_CHEATING', 'SUSPICIOUS', 'CHEATING'][Math.floor(Math.random() * 3)];
+      
+      submissions.push([
+        quizId,
+        studentId,
+        `Quiz Submission ${i}`,
+        new Date(),
+        status === 'IN_PROGRESS' ? null : new Date(),
+        status,
+        100.0,
+        status === 'GRADED' ? Math.floor(Math.random() * 101) : 0,
+        cheatingStatus,
+        cheatingStatus === 'NO_CHEATING' ? 0 : Math.floor(Math.random() * 100)
+      ]);
+    }
+
+    console.log("Inserting submissions...");
+    await pool.query(
+      "INSERT IGNORE INTO submissions (quiz_id, student_id, quiz_name, start_time, end_time, status, total_score, score, cheating_status, risk_score) VALUES ?",
+      [submissions]
+    );
+
+    // Get Submission IDs
+    const [submissionRows] = await pool.query("SELECT id FROM submissions");
+    const submissionIds = (submissionRows as any[]).map(r => r.id);
+
+    // 9. Generate Violations
+    const violations = [];
+    const violationTypes = ['TAB_SWITCH', 'FACE_DETECTION', 'EYE_TRACKING', 'MULTIPLE_FACES'];
+    const severities = ['LOW', 'MEDIUM', 'HIGH'];
+
+    for (let i = 0; i < 1000; i++) {
+      const submissionId = submissionIds[Math.floor(Math.random() * submissionIds.length)];
+      const studentId = studentIds[Math.floor(Math.random() * studentIds.length)];
+      violations.push([
+        submissionId,
+        studentId,
+        violationTypes[Math.floor(Math.random() * violationTypes.length)],
+        severities[Math.floor(Math.random() * severities.length)],
+        `Automated proctoring alert: Suspicious activity detected during exam session.`,
+        new Date()
+      ]);
+    }
+
+    console.log("Inserting violations...");
+    const violationChunkSize = 500;
+    for (let i = 0; i < violations.length; i += violationChunkSize) {
+      const chunk = violations.slice(i, i + violationChunkSize);
+      await pool.query(
+        "INSERT IGNORE INTO violations (submission_id, student_id, violation_type, severity, message, timestamp) VALUES ?",
+        [chunk]
+      );
+    }
+
+    // 10. Generate Notifications
+    const notifications = [];
+    const notificationTypes = ['INVITATION', 'JOIN_REQUEST', 'SYSTEM', 'INVITATION_RESPONSE', 'JOIN_RESPONSE'];
+    for (let i = 0; i < 200; i++) {
+      const userId = studentIds[Math.floor(Math.random() * studentIds.length)];
+      notifications.push([
+        userId,
+        notificationTypes[Math.floor(Math.random() * notificationTypes.length)],
+        `System Notification ${i}`,
+        `This is an automated notification message for testing purposes.`,
+        null,
+        Math.random() > 0.5 ? 1 : 0
+      ]);
+    }
+
+    console.log("Inserting notifications...");
+    await pool.query(
+      "INSERT IGNORE INTO notifications (user_id, type, title, message, related_id, is_read) VALUES ?",
+      [notifications]
+    );
+
+    // 11. Generate Join Requests
+    const joinRequests = [];
+    for (let i = 0; i < 100; i++) {
+      const courseId = courseIds[Math.floor(Math.random() * courseIds.length)];
+      const studentId = studentIds[Math.floor(Math.random() * studentIds.length)];
+      joinRequests.push([
+        courseId,
+        studentId,
+        ['PENDING', 'ACCEPTED', 'DECLINED'][Math.floor(Math.random() * 3)]
+      ]);
+    }
+
+    console.log("Inserting join requests...");
+    await pool.query(
+      "INSERT IGNORE INTO course_join_requests (course_id, student_id, status) VALUES ?",
+      [joinRequests]
+    );
 
     console.log("Seeding completed successfully!");
     process.exit(0);
