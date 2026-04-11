@@ -1,5 +1,5 @@
 import express from "express";
-import { pool } from "../config/database.js";
+import { db } from "../config/database.js";
 import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -11,36 +11,37 @@ router.get("/", async (req: any, res) => {
     const userId = req.user.id;
 
     // Fetch basic notifications
-    const [notifications] = await pool.query(
+    const [notifications]: any = await db.query(
       "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC",
       [userId]
     );
     
-    const mapped = await Promise.all((notifications as any[]).map(async (r) => {
+    const mapped = [];
+    for (const r of notifications) {
       let details: any = null;
 
       // Fetch additional details based on notification type
       if (r.type === 'INVITATION' && r.related_id) {
-        const [inv] = await pool.query(`
+        const [rows]: any = await db.query(`
           SELECT i.*, c.course_name, c.course_code, u.full_name as teacher_name
           FROM course_invitations i
           JOIN courses c ON i.course_id = c.id
           JOIN users u ON i.teacher_id = u.id
           WHERE i.id = ?
         `, [r.related_id]);
-        details = (inv as any[])[0];
+        details = rows[0] || null;
       } else if (r.type === 'JOIN_REQUEST' && r.related_id) {
-        const [reqs] = await pool.query(`
+        const [rows]: any = await db.query(`
           SELECT jr.*, c.course_name, c.course_code, u.full_name as student_name, u.student_code
           FROM course_join_requests jr
           JOIN courses c ON jr.course_id = c.id
           JOIN users u ON jr.student_id = u.id
           WHERE jr.id = ?
         `, [r.related_id]);
-        details = (reqs as any[])[0];
+        details = rows[0] || null;
       }
 
-      return {
+      mapped.push({
         id: r.id,
         userId: r.user_id,
         type: r.type,
@@ -50,8 +51,8 @@ router.get("/", async (req: any, res) => {
         isRead: !!r.is_read,
         createdAt: r.created_at,
         details
-      };
-    }));
+      });
+    }
 
     res.json(mapped);
   } catch (error: any) {
@@ -60,26 +61,25 @@ router.get("/", async (req: any, res) => {
 });
 
 router.post("/respond", async (req, res) => {
-  const connection = await pool.getConnection();
+  const connection = await db.getConnection();
   try {
-    const { notificationId, response } = req.body; // response: 'ACCEPTED' or 'DECLINED' (or 'REJECTED')
-    
     await connection.beginTransaction();
 
-    const [notifRows] = await connection.query("SELECT * FROM notifications WHERE id = ?", [notificationId]);
-    const notification = (notifRows as any)[0];
+    const { notificationId, response } = req.body; // response: 'ACCEPTED' or 'DECLINED' (or 'REJECTED')
+    
+    const [notificationRows]: any = await connection.query("SELECT * FROM notifications WHERE id = ?", [notificationId]);
+    const notification = notificationRows[0];
 
     if (!notification) {
-      await connection.rollback();
-      return res.status(404).json({ error: "Notification not found" });
+      throw new Error("Notification not found");
     }
 
     const status = response === 'APPROVE' || response === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED';
 
     if (notification.type === 'INVITATION') {
       // Handle Invitation Response (Student responding to Teacher)
-      const [invRows] = await connection.query("SELECT * FROM course_invitations WHERE id = ?", [notification.related_id]);
-      const invitation = (invRows as any)[0];
+      const [invitationRows]: any = await connection.query("SELECT * FROM course_invitations WHERE id = ?", [notification.related_id]);
+      const invitation = invitationRows[0];
 
       if (invitation && invitation.status === 'PENDING') {
         await connection.query("UPDATE course_invitations SET status = ? WHERE id = ?", [status, invitation.id]);
@@ -88,10 +88,10 @@ router.post("/respond", async (req, res) => {
         }
         
         // Notify Teacher
-        const [studentRows] = await connection.query("SELECT full_name FROM users WHERE id = ?", [invitation.student_id]);
-        const [courseRows] = await connection.query("SELECT course_code FROM courses WHERE id = ?", [invitation.course_id]);
-        const student = (studentRows as any)[0];
-        const course = (courseRows as any)[0];
+        const [studentRows]: any = await connection.query("SELECT full_name FROM users WHERE id = ?", [invitation.student_id]);
+        const [courseRows]: any = await connection.query("SELECT course_code FROM courses WHERE id = ?", [invitation.course_id]);
+        const student = studentRows[0];
+        const course = courseRows[0];
 
         await connection.query(
           "INSERT INTO notifications (user_id, type, title, message, related_id) VALUES (?, 'INVITATION_RESPONSE', ?, ?, ?)",
@@ -100,8 +100,8 @@ router.post("/respond", async (req, res) => {
       }
     } else if (notification.type === 'JOIN_REQUEST') {
       // Handle Join Request Response (Teacher responding to Student)
-      const [reqRows] = await connection.query("SELECT * FROM course_join_requests WHERE id = ?", [notification.related_id]);
-      const joinRequest = (reqRows as any)[0];
+      const [joinRequestRows]: any = await connection.query("SELECT * FROM course_join_requests WHERE id = ?", [notification.related_id]);
+      const joinRequest = joinRequestRows[0];
 
       if (joinRequest && joinRequest.status === 'PENDING') {
         await connection.query("UPDATE course_join_requests SET status = ? WHERE id = ?", [status, joinRequest.id]);
@@ -110,8 +110,8 @@ router.post("/respond", async (req, res) => {
         }
 
         // Notify Student
-        const [courseRows] = await connection.query("SELECT course_code FROM courses WHERE id = ?", [joinRequest.course_id]);
-        const course = (courseRows as any)[0];
+        const [courseRows]: any = await connection.query("SELECT course_code FROM courses WHERE id = ?", [joinRequest.course_id]);
+        const course = courseRows[0];
 
         await connection.query(
           "INSERT INTO notifications (user_id, type, title, message, related_id) VALUES (?, 'JOIN_RESPONSE', ?, ?, ?)",
@@ -121,7 +121,7 @@ router.post("/respond", async (req, res) => {
     }
 
     // Mark notification as read
-    await connection.query("UPDATE notifications SET is_read = TRUE WHERE id = ?", [notificationId]);
+    await connection.query("UPDATE notifications SET is_read = 1 WHERE id = ?", [notificationId]);
 
     await connection.commit();
     res.json({ success: true });
@@ -135,7 +135,7 @@ router.post("/respond", async (req, res) => {
 
 router.put("/:id/read", async (req, res) => {
   try {
-    await pool.query("UPDATE notifications SET is_read = TRUE WHERE id = ?", [req.params.id]);
+    await db.query("UPDATE notifications SET is_read = 1 WHERE id = ?", [req.params.id]);
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -145,7 +145,7 @@ router.put("/:id/read", async (req, res) => {
 router.put("/read-all", async (req, res) => {
   try {
     const { userId } = req.body;
-    await pool.query("UPDATE notifications SET is_read = TRUE WHERE user_id = ?", [userId]);
+    await db.query("UPDATE notifications SET is_read = 1 WHERE user_id = ?", [userId]);
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

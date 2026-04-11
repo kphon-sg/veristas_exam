@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { WebcamMonitor } from './components/monitoring/WebcamMonitor';
 import { EventLog } from './components/monitoring/EventLog';
+import { StudentDashboard } from './pages/StudentDashboard';
 import { StudentStatsDashboard } from './components/dashboard/StudentStatsDashboard';
 import { QuizCreator } from './components/admin/QuizCreator';
 import { SubmissionReview } from './components/admin/SubmissionReview';
@@ -39,7 +40,7 @@ import { ActivityHistory } from './components/dashboard/ActivityHistory';
 import { QuizHistory } from './components/quiz/QuizHistory';
 import { GradingManagement } from './components/teacher/GradingManagement';
 import { CalendarView } from './components/dashboard/CalendarView';
-import { ProfileSettingsModal } from './components/dashboard/ProfileSettingsModal';
+import { ProfileSettingsView } from './components/dashboard/ProfileSettingsModal';
 import { ProfileOverview } from './components/dashboard/ProfileOverview';
 import { NotificationsView } from './components/dashboard/NotificationsView';
 import { Sidebar } from './components/layout/Sidebar';
@@ -50,6 +51,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import HelpCenter from './pages/HelpCenter';
 import { PreExamSetup } from './components/monitoring/PreExamSetup';
+import { ExamSetupPage } from './pages/ExamSetupPage';
 import { MonitoringEvent, ExamState, StudentStats } from './types';
 import { cn } from './lib/utils';
 
@@ -116,8 +118,6 @@ export default function App() {
   const [viewingStudentScores, setViewingStudentScores] = useState(false);
   const [isManagingClasses, setIsManagingClasses] = useState(false);
   const [isViewingHistory, setIsViewingHistory] = useState(false);
-  const [isViewingQuizHistory, setIsViewingQuizHistory] = useState(false);
-  const [isViewingGradingManagement, setIsViewingGradingManagement] = useState(false);
   const [isViewingCourses, setIsViewingCourses] = useState(false);
   const [isJoiningCourse, setIsJoiningCourse] = useState(false);
   const [selectedTeacherCourseId, setSelectedTeacherCourseId] = useState<number | null>(null);
@@ -128,9 +128,7 @@ export default function App() {
   const [courseCodeFilter, setCourseCodeFilter] = useState('');
   const [teacherNameFilter, setTeacherNameFilter] = useState('');
   const [schoolNameFilter, setSchoolNameFilter] = useState('');
-  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [isViewingProfile, setIsViewingProfile] = useState(false);
-  const [isViewingCalendar, setIsViewingCalendar] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -261,8 +259,8 @@ export default function App() {
           .catch(err => console.error("[AUTH] Error fetching classes:", err));
       }
 
-      // For students, only fetch if a course is selected or viewing calendar
-      if (user.role === 'STUDENT' && !selectedCourseId && !isViewingCalendar) {
+      // For students, only fetch if a course is selected, viewing calendar, or on dashboard
+      if (user.role === 'STUDENT' && !selectedCourseId && activeTab !== 'calendar' && activeTab !== 'dashboard') {
         setQuizzes([]);
         setUserSubmissions([]);
         setStudentStats(null);
@@ -270,7 +268,7 @@ export default function App() {
       }
 
       const url = user.role === 'STUDENT' 
-        ? (selectedCourseId ? `/api/quizzes?classId=${selectedCourseId}&studentId=${user.id}` : `/api/quizzes?studentId=${user.id}`)
+        ? (selectedCourseId ? `/api/quizzes?classId=${selectedCourseId}` : '/api/quizzes')
         : `/api/quizzes?teacherId=${user.id}`;
       
       authenticatedFetch(url)
@@ -291,8 +289,12 @@ export default function App() {
         })
         .catch(err => console.error("[QUIZ] Error fetching quizzes:", err));
 
-      if (user.role === 'STUDENT' && selectedCourseId) {
-        authenticatedFetch(`/api/submissions?studentId=${user.id}&classId=${selectedCourseId}`)
+      if (user.role === 'STUDENT' && (selectedCourseId || activeTab === 'calendar' || activeTab === 'dashboard')) {
+        const subUrl = selectedCourseId 
+          ? `/api/submissions?classId=${selectedCourseId}` 
+          : '/api/submissions';
+          
+        authenticatedFetch(subUrl)
           .then(res => res.json())
           .then(data => {
             const subs = Array.isArray(data) ? data : [];
@@ -300,7 +302,11 @@ export default function App() {
           })
           .catch(err => console.error("[QUIZ] Error fetching student submissions:", err));
 
-        authenticatedFetch(`/api/student/stats?studentId=${user.id}&classId=${selectedCourseId}`)
+        const statsUrl = selectedCourseId
+          ? `/api/student/stats?classId=${selectedCourseId}`
+          : '/api/student/stats';
+
+        authenticatedFetch(statsUrl)
           .then(res => res.ok ? res.json() : null)
           .then(data => {
             if (data) setStudentStats(data);
@@ -308,7 +314,7 @@ export default function App() {
           .catch(err => console.error("[QUIZ] Error fetching student stats:", err));
       }
     }
-  }, [user, token, selectedCourseId, examState.status, selectedQuiz, authenticatedFetch]);
+  }, [user, token, selectedCourseId, activeTab, examState.status, selectedQuiz, authenticatedFetch]);
 
   useEffect(() => {
     loadQuizzes();
@@ -462,7 +468,7 @@ export default function App() {
         setSelectedQuiz(null);
         
         notify.success("Examination submitted successfully!");
-        setIsViewingQuizHistory(true);
+        setActiveTab('quiz-history');
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Unknown server error' }));
         console.error("[App] Submission failed:", errorData);
@@ -556,15 +562,12 @@ export default function App() {
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
     // Reset all view states
-    setIsViewingQuizHistory(false);
     setIsViewingProfile(false);
-    setIsViewingCalendar(false);
     setIsManagingClasses(false);
     setIsViewingHistory(false);
     setViewingStudentScores(false);
     setIsCreatingQuiz(false);
     setSelectedCourseId(null);
-    setIsViewingGradingManagement(false);
     setIsViewingCourses(false);
     setIsJoiningCourse(false);
 
@@ -588,22 +591,22 @@ export default function App() {
         break;
       case 'grading-management':
         if (user?.role === 'TEACHER') {
-          setIsViewingGradingManagement(true);
+          setActiveTab('grading-management');
         } else {
-          setIsViewingQuizHistory(true);
+          setActiveTab('quiz-history');
         }
         break;
       case 'quiz-history':
-        setIsViewingQuizHistory(true);
+        setActiveTab('quiz-history');
         break;
       case 'calendar':
-        setIsViewingCalendar(true);
+        setActiveTab('calendar');
+        break;
+      case 'settings':
+        setActiveTab('settings');
         break;
       case 'profile':
         setIsViewingProfile(true);
-        break;
-      case 'settings':
-        setIsProfileSettingsOpen(true);
         break;
       default:
         break;
@@ -790,8 +793,9 @@ export default function App() {
     }
   }, [user, selectedQuiz, examState.status]);
 
-  const startExam = async (stream?: MediaStream) => {
-    if (!selectedQuiz || !user) return;
+  const startExam = async (stream?: MediaStream, quizOverride?: Quiz) => {
+    const activeQuiz = quizOverride || selectedQuiz;
+    if (!activeQuiz || !user) return;
     
     if (stream) {
       setActiveStream(stream);
@@ -809,24 +813,24 @@ export default function App() {
     setEvents([]); // Clear logs for new session BEFORE starting monitoring
     addEvent('Exam started', 'none');
     
-    const durationInSeconds = (selectedQuiz.duration || 30) * 60;
+    const durationInSeconds = (activeQuiz.duration || 30) * 60;
     const endTime = Date.now() + durationInSeconds * 1000;
     
     // Persist for refresh
-    localStorage.setItem(`quiz_end_time_${selectedQuiz.id}_${user.id}`, endTime.toString());
+    localStorage.setItem(`quiz_end_time_${activeQuiz.id}_${user.id}`, endTime.toString());
     
     setIsMonitoring(true);
     setExamState(prev => ({ 
       ...prev, 
       status: 'running', 
       startTime: new Date().toISOString(),
-      duration: selectedQuiz.duration || 30,
+      duration: activeQuiz.duration || 30,
       remainingTime: durationInSeconds,
       endTime: endTime
     }));
 
     try {
-      await authenticatedFetch(`/api/quizzes/${selectedQuiz.id}/start`, {
+      await authenticatedFetch(`/api/quizzes/${activeQuiz.id}/start`, {
         method: 'POST',
         body: JSON.stringify({ studentId: user.id })
       });
@@ -860,6 +864,25 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/help" element={<HelpCenter />} />
+        <Route path="/exam/setup/:quizId" element={
+          user ? (
+            <ExamSetupPage 
+              token={token} 
+              onJoin={(quiz, stream) => {
+                setSelectedQuiz(quiz);
+                setExamState({ 
+                  title: quiz.title, 
+                  duration: quiz.duration, 
+                  remainingTime: quiz.duration * 60, 
+                  status: 'idle' 
+                });
+                setIsFaceDetected(true);
+                startExam(stream, quiz);
+                navigate('/'); // Navigate back to root where the exam UI is rendered
+              }} 
+            />
+          ) : <Navigate to="/" />
+        } />
         <Route path="/*" element={
           !user ? (
             <LoginPortal 
@@ -1367,6 +1390,37 @@ export default function App() {
                   )
                 ) : activeTab === 'notifications' ? (
                   <NotificationsView userId={user.id} userRole="TEACHER" token={token} />
+                ) : activeTab === 'grading-management' ? (
+                  <div className="col-span-12">
+                    <GradingManagement 
+                      teacherId={user.id} 
+                      onClose={() => handleTabChange('dashboard')}
+                      authenticatedFetch={authenticatedFetch}
+                      onReviewSubmission={(sub) => setReviewingSubmission(sub)}
+                    />
+                  </div>
+                ) : activeTab === 'calendar' ? (
+                  <div className="col-span-12">
+                    <CalendarView 
+                      quizzes={quizzes} 
+                      onClose={() => handleTabChange('dashboard')} 
+                      userRole="TEACHER"
+                      onEditQuiz={(quiz) => setEditingQuiz(quiz as any)}
+                    />
+                  </div>
+                ) : activeTab === 'settings' ? (
+                  <div className="col-span-12">
+                    <ProfileSettingsView
+                      user={user}
+                      token={token}
+                      onClose={() => handleTabChange('dashboard')}
+                      onUpdate={(updatedUser) => {
+                        const newUser = { ...user, ...updatedUser };
+                        setUser(newUser);
+                        localStorage.setItem('veritas_user', JSON.stringify(newUser));
+                      }}
+                    />
+                  </div>
                 ) : null}
               </div>
             ) : (
@@ -1375,14 +1429,12 @@ export default function App() {
                   {examState.status === 'idle' && !selectedCourseId ? (
                     activeTab === 'dashboard' ? (
                       <div className="space-y-10">
-                        <StudentStatsDashboard 
-                          quizzes={quizzes}
-                          submissions={submissions}
+                        <StudentDashboard 
+                          user={user}
                           onQuizSelect={(quiz) => {
                             setSelectedQuiz(quiz as any);
                             setExamState({ ...examState, status: 'idle' });
                           }}
-                          onViewHistory={() => setIsViewingHistory(true)}
                         />
                       </div>
                     ) : activeTab === 'courses' ? (
@@ -1404,6 +1456,45 @@ export default function App() {
                           ))}
                         </div>
                       </div>
+                    ) : activeTab === 'calendar' ? (
+                      <CalendarView 
+                        quizzes={quizzes.map(quiz => {
+                          const submission = userSubmissions.find(s => s.quizId === quiz.id);
+                          const isCompleted = !!submission;
+                          const isOverdue = !isCompleted && new Date(quiz.deadline) < new Date();
+                          
+                          return {
+                            ...quiz,
+                            completionStatus: isCompleted ? 'completed' : (isOverdue ? 'overdue' : 'pending'),
+                            submissionScore: submission?.score,
+                            submittedAt: submission?.timestamp
+                          };
+                        })} 
+                        onClose={() => handleTabChange('dashboard')} 
+                        userRole="STUDENT"
+                        onQuizSelect={(quiz) => {
+                          setSelectedQuiz(quiz as any);
+                          setExamState({ ...examState, status: 'idle' });
+                        }}
+                      />
+                    ) : activeTab === 'quiz-history' ? (
+                      <QuizHistory 
+                        userId={user.id} 
+                        courseId={selectedCourseId}
+                        onClose={() => handleTabChange('dashboard')} 
+                        authenticatedFetch={authenticatedFetch}
+                      />
+                    ) : activeTab === 'settings' ? (
+                      <ProfileSettingsView
+                        user={user}
+                        token={token}
+                        onClose={() => handleTabChange('dashboard')}
+                        onUpdate={(updatedUser) => {
+                          const newUser = { ...user, ...updatedUser };
+                          setUser(newUser);
+                          localStorage.setItem('veritas_user', JSON.stringify(newUser));
+                        }}
+                      />
                     ) : activeTab === 'notifications' ? (
                       <NotificationsView userId={user.id} userRole="STUDENT" token={token} />
                     ) : activeTab === 'join-course' ? (
@@ -1589,7 +1680,7 @@ export default function App() {
                             setIsSettingUp(true);
                             setIsCameraActive(true);
                           }}
-                          onViewHistory={() => setIsViewingQuizHistory(true)}
+                          onViewHistory={() => setActiveTab('quiz-history')}
                         />
                       </div>
                     </div>
@@ -1726,7 +1817,7 @@ export default function App() {
     )}
   </div>
 </main>
-  <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+  <BottomNav activeTab={activeTab} onTabChange={handleTabChange} userRole={user.role} />
 
         {user.role === 'TEACHER' && viewingStudentScores && (
           <StudentScoresView 
@@ -1872,24 +1963,6 @@ export default function App() {
               </div>
             )}
           </AnimatePresence>
-          {isViewingCalendar && (
-            <CalendarView 
-              quizzes={quizzes} 
-              onClose={() => setIsViewingCalendar(false)} 
-              userRole={user.role as 'TEACHER' | 'STUDENT'}
-              onQuizSelect={(quiz) => {
-                if (user.role === 'STUDENT') {
-                  setSelectedQuiz(quiz as any);
-                  setExamState({ ...examState, status: 'idle' });
-                }
-              }}
-              onEditQuiz={(quiz) => {
-                if (user.role === 'TEACHER') {
-                  setEditingQuiz(quiz as any);
-                }
-              }}
-            />
-          )}
 
           {isViewingHistory && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
@@ -1911,58 +1984,6 @@ export default function App() {
                   role={user.role as 'TEACHER' | 'STUDENT'} 
                   onClose={() => setIsViewingHistory(false)} 
                   authenticatedFetch={authenticatedFetch}
-                />
-              </motion.div>
-            </div>
-          )}
-
-          {isViewingQuizHistory && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsViewingQuizHistory(false)}
-                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-5xl h-[85vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
-              >
-                <QuizHistory 
-                  userId={user.id} 
-                  courseId={selectedCourseId}
-                  onClose={() => setIsViewingQuizHistory(false)} 
-                  authenticatedFetch={authenticatedFetch}
-                />
-              </motion.div>
-            </div>
-          )}
-
-          {isViewingGradingManagement && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsViewingGradingManagement(false)}
-                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-6xl h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col"
-              >
-                <GradingManagement 
-                  teacherId={user.id} 
-                  onClose={() => setIsViewingGradingManagement(false)} 
-                  authenticatedFetch={authenticatedFetch}
-                  onReviewSubmission={(sub) => {
-                    setReviewingSubmission(sub);
-                  }}
                 />
               </motion.div>
             </div>
@@ -2005,21 +2026,6 @@ export default function App() {
               )}
             </>
           )}
-
-          <AnimatePresence>
-            {isProfileSettingsOpen && (
-              <ProfileSettingsModal
-                user={user}
-                token={token}
-                onClose={() => setIsProfileSettingsOpen(false)}
-                onUpdate={(updatedUser) => {
-                  const newUser = { ...user, ...updatedUser };
-                  setUser(newUser);
-                  localStorage.setItem('veritas_user', JSON.stringify(newUser));
-                }}
-              />
-            )}
-          </AnimatePresence>
         </div>
       </div>
     )

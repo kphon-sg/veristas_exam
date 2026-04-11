@@ -1,38 +1,58 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, BookOpen, Clock, Calendar, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface BottomNavProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  userRole?: string;
+  activeTab?: string;
+  onTabChange?: (tabId: string) => void;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ userRole = 'STUDENT', activeTab, onTabChange }) => {
   const navItems = [
-    { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
-    { id: 'courses', label: 'Courses', icon: BookOpen },
-    { id: 'quiz-history', label: 'History', icon: Clock },
-    { id: 'calendar', label: 'Calendar', icon: Calendar },
-    { id: 'profile', label: 'Profile', icon: User },
-  ];
+    { id: 'dashboard', label: 'Home', icon: LayoutDashboard, path: '/dashboard' },
+    { id: 'courses', label: 'Courses', icon: BookOpen, path: '/dashboard/courses' },
+    { 
+      id: 'quiz-history', 
+      label: 'History', 
+      icon: Clock, 
+      path: '/dashboard/history',
+      roles: ['STUDENT']
+    },
+    { 
+      id: 'grading', 
+      label: 'Grading', 
+      icon: Clock, 
+      path: '/dashboard/grading',
+      roles: ['TEACHER']
+    },
+    { id: 'calendar', label: 'Calendar', icon: Calendar, path: '/dashboard/calendar' },
+    { id: 'profile', label: 'Profile', icon: User, path: '/dashboard/profile' },
+  ].filter(item => !item.roles || item.roles.includes(userRole));
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 flex items-center justify-between z-50 md:hidden shadow-2xl">
       {navItems.map(item => (
-        <button
+        <NavLink
           key={item.id}
-          onClick={() => onTabChange(item.id)}
-          className={cn(
+          to={item.path}
+          end={item.path === '/dashboard'}
+          className={({ isActive }) => cn(
             "flex flex-col items-center gap-1 transition-all duration-200",
-            activeTab === item.id ? "text-violet-600" : "text-slate-600 hover:text-slate-800"
+            isActive ? "text-violet-600" : "text-slate-600 hover:text-slate-800"
           )}
         >
-          <item.icon className={cn(
-            "w-5 h-5",
-            activeTab === item.id ? "fill-violet-600/10" : ""
-          )} />
-          <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
-        </button>
+          {({ isActive }) => (
+            <>
+              <item.icon className={cn(
+                "w-5 h-5",
+                isActive ? "fill-violet-600/10" : ""
+              )} />
+              <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
+            </>
+          )}
+        </NavLink>
       ))}
     </nav>
   );

@@ -47,7 +47,11 @@ export function GradingManagement({ teacherId, onClose, authenticatedFetch, onRe
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -57,7 +61,7 @@ export function GradingManagement({ teacherId, onClose, authenticatedFetch, onRe
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50">
+    <div className="flex flex-col h-full bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="portal-card-header flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
           <div className="portal-header-icon-box">
@@ -71,13 +75,14 @@ export function GradingManagement({ teacherId, onClose, authenticatedFetch, onRe
         <button 
           onClick={onClose}
           className="portal-close-button"
+          title="Back to Dashboard"
         >
           <X className="w-6 h-6" />
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 md:p-8">
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="w-full space-y-8">
           {/* Filter Switch */}
           <div className="flex items-center justify-between">
             <div className="flex p-1.5 bg-slate-200/50 rounded-2xl w-fit shadow-inner">
@@ -173,7 +178,7 @@ export function GradingManagement({ teacherId, onClose, authenticatedFetch, onRe
                             "text-lg font-black font-mono",
                             sub.status === 'GRADED' ? "text-emerald-600" : "text-amber-500 italic"
                           )}>
-                            {sub.status === 'GRADED' ? `${sub.score}/${sub.total_score}` : 'Pending'}
+                            {sub.status === 'GRADED' ? `${sub.score}/${sub.total_questions || sub.total_score || 0}` : 'Pending'}
                           </div>
                         </div>
                       </div>

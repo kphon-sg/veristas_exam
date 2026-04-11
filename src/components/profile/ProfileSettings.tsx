@@ -1,16 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Phone, Lock, Camera, Loader2, CheckCircle2, AlertCircle, BookOpen } from 'lucide-react';
+import { User, Phone, Lock, Camera, Loader2, CheckCircle2, AlertCircle, BookOpen } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { PageHeader } from '../ui/PageHeader';
 
-interface ProfileSettingsModalProps {
+interface ProfileSettingsProps {
   user: any;
   token: string | null;
-  onClose: () => void;
   onUpdate: (updatedUser: any) => void;
 }
 
-export const ProfileSettingsView: React.FC<ProfileSettingsModalProps> = ({ user, token, onClose, onUpdate }) => {
+export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ user, token, onUpdate }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -103,30 +103,15 @@ export const ProfileSettingsView: React.FC<ProfileSettingsModalProps> = ({ user,
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-      {/* Header */}
-      <div className="portal-card-header flex items-center justify-between px-8 py-6">
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="portal-header-icon-box">
-            <User className="w-6 h-6 text-indigo-600" />
-          </div>
-          <div>
-            <h2 className="portal-header-title">Account Settings</h2>
-            <p className="portal-header-subtitle">Update your profile information</p>
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="portal-close-button relative z-10"
-          title="Back to Dashboard"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      </div>
+    <div className="space-y-8">
+      <PageHeader 
+        title="Account Settings" 
+        subtitle="Update your profile information" 
+        icon={User}
+      />
 
-      {/* Form Content */}
-      <div className="flex-1 overflow-y-auto p-8">
-        <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="max-w-4xl mx-auto">
+        <form onSubmit={handleSubmit} className="space-y-8 bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
           {/* Profile Picture Section */}
           <div className="flex flex-col items-center gap-4">
             <div className="relative group">
@@ -270,14 +255,7 @@ export const ProfileSettingsView: React.FC<ProfileSettingsModalProps> = ({ user,
           </AnimatePresence>
 
           {/* Footer Actions */}
-          <div className="pt-4 flex items-center justify-end gap-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-slate-800 transition-colors"
-            >
-              Cancel
-            </button>
+          <div className="pt-4 flex items-center justify-end">
             <button
               type="submit"
               disabled={isLoading}

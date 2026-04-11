@@ -72,7 +72,7 @@ CREATE TABLE quizzes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100) NOT NULL,
     description TEXT,
-    duration_minutes INT NOT NULL,
+    duration_minutes INT NOT NULL DEFAULT 30,
     course_id INT NOT NULL,
     teacher_id INT NOT NULL,
     course_name VARCHAR(100),
@@ -93,9 +93,10 @@ CREATE TABLE questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     quiz_id INT NOT NULL,
     question_text TEXT NOT NULL,
-    question_type ENUM('MULTIPLE_CHOICE', 'ESSAY') NOT NULL,
+    question_type ENUM('MULTIPLE_CHOICE', 'TRUE_FALSE', 'SHORT_ANSWER', 'ESSAY') NOT NULL,
     points DECIMAL(5,2) DEFAULT 1.0,
     sort_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -120,7 +121,7 @@ CREATE TABLE submissions (
     end_time DATETIME,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     duration_seconds INT DEFAULT 0,
-    status ENUM('IN_PROGRESS', 'SUBMITTED', 'GRADED', 'AUTO_TERMINATED') DEFAULT 'IN_PROGRESS',
+    status ENUM('IN_PROGRESS', 'SUBMITTED', 'GRADED', 'AUTO_TERMINATED', 'TERMINATED') DEFAULT 'IN_PROGRESS',
     auto_termination_reason TEXT,
     
     -- Scoring
@@ -128,12 +129,16 @@ CREATE TABLE submissions (
     score DECIMAL(5,2) NOT NULL DEFAULT 0.0,
     
     -- Cheating Evaluation
-    cheating_status ENUM('NO_CHEATING', 'SUSPICIOUS', 'CHEATING') DEFAULT 'NO_CHEATING',
+    cheating_status ENUM('NONE', 'LOW_RISK', 'MEDIUM_RISK', 'HIGH_RISK', 'NO_CHEATING', 'SUSPICIOUS', 'CHEATING') DEFAULT 'NONE',
     risk_score DECIMAL(5,2) DEFAULT 0.0,
     total_violation_count INT DEFAULT 0,
     low_violation_count INT DEFAULT 0,
     medium_violation_count INT DEFAULT 0,
     high_violation_count INT DEFAULT 0,
+    tab_switch_count INT DEFAULT 0,
+    face_missing_count INT DEFAULT 0,
+    looking_away_count INT DEFAULT 0,
+    multiple_faces_count INT DEFAULT 0,
     evaluation_timestamp TIMESTAMP NULL,
 
     -- Technical Metadata

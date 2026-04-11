@@ -33,7 +33,7 @@ interface CourseMaterial {
 interface CourseDetailProps {
   courseId: number;
   user: any;
-  authenticatedFetch: (url: string, options?: any) => Promise<any>;
+  authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>;
   onBack: () => void;
   onStartQuiz: (quiz: any) => void;
 }
@@ -56,18 +56,27 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [courseData, quizzesData, submissionsData, materialsData] = await Promise.all([
+        const [courseRes, quizzesRes, submissionsRes, materialsRes] = await Promise.all([
           authenticatedFetch(`/api/classes`),
           authenticatedFetch(`/api/quizzes?courseId=${courseId}`),
           authenticatedFetch(`/api/submissions?studentId=${user.id}`),
           authenticatedFetch(`/api/classes/${courseId}/materials`)
         ]);
 
-        const selectedCourse = courseData.find((c: any) => c.id === courseId);
-        setCourse(selectedCourse);
-        setQuizzes(quizzesData);
-        setSubmissions(submissionsData.filter((s: any) => s.courseId === courseId || s.course_id === courseId));
-        setMaterials(materialsData);
+        if (courseRes.ok && quizzesRes.ok && submissionsRes.ok && materialsRes.ok) {
+          const [courseData, quizzesData, submissionsData, materialsData] = await Promise.all([
+            courseRes.json(),
+            quizzesRes.json(),
+            submissionsRes.json(),
+            materialsRes.json()
+          ]);
+
+          const selectedCourse = courseData.find((c: any) => c.id === courseId);
+          setCourse(selectedCourse);
+          setQuizzes(quizzesData);
+          setSubmissions(submissionsData.filter((s: any) => s.courseId === courseId || s.course_id === courseId));
+          setMaterials(materialsData);
+        }
       } catch (error) {
         console.error("Error fetching course data:", error);
       } finally {
@@ -487,7 +496,6 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
             <QuizHistory 
               userId={user.id}
               courseId={courseId}
-              onClose={() => setActiveTab('overview')}
               authenticatedFetch={authenticatedFetch}
             />
           </motion.div>

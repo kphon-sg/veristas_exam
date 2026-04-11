@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   ClipboardList, 
@@ -23,19 +23,55 @@ import { Table, TableRow, TableCell } from '../components/ui/Table';
 import { cn } from '../lib/utils';
 
 export const TeacherDashboard = ({ user }: { user: any }) => {
-  const analytics = [
-    { label: 'Total Students', value: '1,284', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', trend: '+12% from last month' },
-    { label: 'Active Quizzes', value: '12', icon: ClipboardList, color: 'text-emerald-600', bg: 'bg-emerald-50', trend: '3 ending today' },
-    { label: 'Pending Submissions', value: '84', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50', trend: 'Needs review' },
-    { label: 'Class Performance', value: '88.4%', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50', trend: '+2.4% increase' },
-  ];
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    activeQuizzes: 0,
+    pendingSubmissions: 0,
+    classPerformance: 0
+  });
+  const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const students = [
-    { id: 'STU001', name: 'Alice Johnson', email: 'alice.j@university.edu', lastAttempt: '2 hours ago', score: 94, status: 'Graded' },
-    { id: 'STU002', name: 'Bob Smith', email: 'bob.smith@university.edu', lastAttempt: '5 hours ago', score: 88, status: 'Graded' },
-    { id: 'STU003', name: 'Charlie Brown', email: 'charlie.b@university.edu', lastAttempt: 'Yesterday', score: 0, status: 'Pending' },
-    { id: 'STU004', name: 'Diana Prince', email: 'diana.p@university.edu', lastAttempt: '3 days ago', score: 91, status: 'Graded' },
-    { id: 'STU005', name: 'Ethan Hunt', email: 'ethan.h@university.edu', lastAttempt: '1 week ago', score: 76, status: 'Graded' },
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const headers = { 'Authorization': `Bearer ${token}` };
+
+        // Fetch Stats
+        const statsRes = await fetch('/api/teacher/stats', { headers });
+        const statsData = await statsRes.json();
+        if (!statsData.error) setStats(statsData);
+
+        // Fetch Recent Submissions
+        const recentRes = await fetch(`/api/teacher/submissions?teacherId=${user?.id}&limit=5`, { headers });
+        const recentData = await recentRes.json();
+        if (!recentData.error) setRecentSubmissions(recentData);
+
+        // Fetch Performance Data (Graded)
+        const perfRes = await fetch(`/api/teacher/submissions?teacherId=${user?.id}&status=GRADED`, { headers });
+        const perfData = await perfRes.json();
+        if (!perfData.error) setPerformanceData(perfData);
+
+      } catch (error) {
+        console.error("Error fetching teacher dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.id) {
+      fetchDashboardData();
+    }
+  }, [user?.id]);
+
+  const analytics = [
+    { label: 'Total Students', value: stats.totalStudents.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', trend: 'Enrolled in your courses' },
+    { label: 'Active Quizzes', value: stats.activeQuizzes.toString(), icon: ClipboardList, color: 'text-emerald-600', bg: 'bg-emerald-50', trend: 'Currently published' },
+    { label: 'Pending Submissions', value: stats.pendingSubmissions.toString(), icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50', trend: 'Needs review' },
+    { label: 'Class Performance', value: `${stats.classPerformance}%`, icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50', trend: 'Average score' },
   ];
 
   return (
@@ -43,7 +79,7 @@ export const TeacherDashboard = ({ user }: { user: any }) => {
       {/* Header */}
       <header className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Student Performance</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Teacher Dashboard</h1>
         </div>
         <div className="flex items-center gap-4">
           <button className="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-veritas-indigo transition-colors">
@@ -71,10 +107,10 @@ export const TeacherDashboard = ({ user }: { user: any }) => {
                 <ScanFace className="w-10 h-10 text-white" />
               </div>
               <div className="space-y-2">
-                <h2 className="text-3xl font-black tracking-tight text-slate-800">Welcome back, <span className="text-indigo-600">Dr.!</span></h2>
+                <h2 className="text-3xl font-black tracking-tight text-slate-800">Welcome back, <span className="text-indigo-600">{user?.full_name?.split(' ')[0] || 'Teacher'}!</span></h2>
                 <div className="flex items-center gap-3">
                   <Badge variant="warning" className="bg-amber-50 text-amber-600 border-amber-100">● Teacher Account</Badge>
-                  <p className="text-slate-400 text-sm font-medium">You have 3 active quizzes this week.</p>
+                  <p className="text-slate-400 text-sm font-medium">You have {stats.activeQuizzes} active quizzes this week.</p>
                 </div>
               </div>
             </div>
@@ -85,26 +121,7 @@ export const TeacherDashboard = ({ user }: { user: any }) => {
           </CardContent>
         </Card>
 
-        {/* Action Cards (Style from image) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            { label: 'Create Quiz', desc: 'Design and publish new assessments', icon: Plus, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-            { label: 'View Scores', desc: 'Monitor student performance & logs', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-            { label: 'Manage Courses', desc: 'Enroll students and organize groups', icon: ClipboardList, color: 'text-amber-600', bg: 'bg-amber-50' },
-          ].map((item, i) => (
-            <Card key={i} className="border-none shadow-sm hover:scale-[1.02] transition-transform cursor-pointer">
-              <CardContent className="p-8">
-                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-6", item.bg)}>
-                  <item.icon className={cn("w-6 h-6", item.color)} />
-                </div>
-                <h3 className="text-xl font-black text-slate-800 mb-1">{item.label}</h3>
-                <p className="text-sm font-medium text-slate-400">{item.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Analytics Grid (Prompt Requirement) */}
+        {/* Analytics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {analytics.map((item, i) => (
             <Card key={i} className="border-none shadow-sm">
@@ -138,20 +155,27 @@ export const TeacherDashboard = ({ user }: { user: any }) => {
                 <h3 className="text-lg font-black text-slate-800 tracking-tight">Recent Submissions</h3>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
-                {[1, 2, 3].map((i) => (
+                {recentSubmissions.length > 0 ? recentSubmissions.map((sub, i) => (
                   <div key={i} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-slate-400">
-                        S{i}
-                      </div>
+                      <Avatar name={sub.studentName} size="sm" className="rounded-xl" />
                       <div>
-                        <p className="text-sm font-bold text-slate-800">Student Name {i}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quiz Title {i}</p>
+                        <p className="text-sm font-bold text-slate-800">{sub.studentName}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sub.quizTitle}</p>
                       </div>
                     </div>
-                    <Badge variant="success" className="bg-emerald-50 text-emerald-600 border-emerald-100">9{i}%</Badge>
+                    <div className="text-right">
+                      <Badge variant={sub.status === 'GRADED' ? 'success' : 'warning'}>
+                        {sub.status === 'GRADED' ? `${Math.round((sub.score / sub.total_score) * 100)}%` : 'Pending'}
+                      </Badge>
+                      <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                        {new Date(sub.submittedAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8 text-slate-400 font-medium">No recent submissions</div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -175,7 +199,7 @@ export const TeacherDashboard = ({ user }: { user: any }) => {
           </div>
         </div>
 
-        {/* Student Performance Table (Prompt Requirement) */}
+        {/* Student Performance Table */}
         <Card variant="paper" className="shadow-none">
           <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100">
             <div>
@@ -194,57 +218,65 @@ export const TeacherDashboard = ({ user }: { user: any }) => {
             </div>
           </CardHeader>
           <Table headers={['Student Name', 'Student ID', 'Last Attempt', 'Score', 'Status', 'Actions']}>
-            {students.map((student, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar name={student.name} size="sm" />
-                    <div>
-                      <p className="font-bold text-slate-800">{student.name}</p>
-                      <p className="text-xs text-slate-400">{student.email}</p>
+            {performanceData.length > 0 ? performanceData.map((student, i) => {
+              const scorePercent = Math.round((student.score / student.total_score) * 100);
+              return (
+                <TableRow key={i}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar name={student.studentName} size="sm" />
+                      <div>
+                        <p className="font-bold text-slate-800">{student.studentName}</p>
+                        <p className="text-xs text-slate-400">{student.studentCode}</p>
+                      </div>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell className="font-mono text-xs font-bold text-slate-400">{student.id}</TableCell>
-                <TableCell className="font-medium text-slate-600">{student.lastAttempt}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className={cn(
-                          "h-full rounded-full",
-                          student.score >= 90 ? "bg-emerald-500" : 
-                          student.score >= 70 ? "bg-blue-500" : "bg-amber-500"
-                        )}
-                        style={{ width: `${student.score}%` }}
-                      />
+                  </TableCell>
+                  <TableCell className="font-mono text-xs font-bold text-slate-400">{student.studentCode}</TableCell>
+                  <TableCell className="font-medium text-slate-600">{new Date(student.submittedAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                          className={cn(
+                            "h-full rounded-full",
+                            scorePercent >= 90 ? "bg-emerald-500" : 
+                            scorePercent >= 70 ? "bg-blue-500" : "bg-amber-500"
+                          )}
+                          style={{ width: `${scorePercent}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-slate-800">{scorePercent}%</span>
                     </div>
-                    <span className="text-xs font-bold text-slate-800">{student.score}%</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={student.status === 'Graded' ? 'success' : 'warning'}>
-                    {student.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button className="p-2 hover:bg-amber-50 text-slate-400 hover:text-amber-600 rounded-lg transition-colors">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </TableCell>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={student.status === 'GRADED' ? 'success' : 'warning'}>
+                      {student.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <button className="p-2 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button className="p-2 hover:bg-amber-50 text-slate-400 hover:text-amber-600 rounded-lg transition-colors">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            }) : (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-slate-400">No performance data available</TableCell>
               </TableRow>
-            ))}
+            )}
           </Table>
         </Card>
       </div>
     </div>
   );
 };
+

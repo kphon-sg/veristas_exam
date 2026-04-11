@@ -77,32 +77,38 @@ const CourseCalendar: React.FC<CourseCalendarProps> = ({ events }) => {
             <div 
               key={idx} 
               className={cn(
-                "min-h-[80px] p-2 border-r border-b border-slate-50 last:border-r-0 relative",
+                "min-h-[80px] p-2 border-r border-b border-slate-50 last:border-r-0 relative transition-colors",
                 !isCurrentMonth && "bg-slate-50/30",
-                isToday && "bg-indigo-50/30"
+                isToday && "bg-indigo-50/30",
+                dayEvents.some(e => e.type === 'DEADLINE') && "bg-rose-50/10"
               )}
             >
-              <span className={cn(
-                "text-[10px] font-bold",
-                !isCurrentMonth ? "text-slate-300" : "text-slate-500",
-                isToday && "text-veritas-indigo"
-              )}>
-                {format(day, 'd')}
-              </span>
+              <div className="flex items-center justify-between">
+                <span className={cn(
+                  "text-[10px] font-bold",
+                  !isCurrentMonth ? "text-slate-300" : "text-slate-500",
+                  isToday && "text-veritas-indigo"
+                )}>
+                  {format(day, 'd')}
+                </span>
+                {dayEvents.some(e => e.type === 'DEADLINE') && (
+                  <div className="w-1 h-1 bg-rose-500 rounded-full animate-pulse" />
+                )}
+              </div>
 
               <div className="mt-1 space-y-1">
                 {dayEvents.map((event, eIdx) => (
                   <div 
                     key={eIdx}
                     className={cn(
-                      "text-[9px] px-1.5 py-0.5 rounded-sm font-bold truncate border",
-                      event.type === 'DEADLINE' && "bg-rose-50 text-rose-600 border-rose-100",
-                      event.type === 'EXAM' && "bg-amber-50 text-amber-600 border-amber-100",
-                      event.type === 'SESSION' && "bg-teal-50 text-teal-600 border-teal-100"
+                      "text-[9px] px-1.5 py-0.5 rounded-sm font-bold truncate border shadow-sm transition-transform hover:scale-105",
+                      event.type === 'DEADLINE' && "bg-rose-50 text-rose-700 border-rose-200",
+                      event.type === 'EXAM' && "bg-amber-50 text-amber-700 border-amber-100",
+                      event.type === 'SESSION' && "bg-teal-50 text-teal-700 border-teal-100"
                     )}
                     title={event.title}
                   >
-                    {event.title}
+                    {event.type === 'DEADLINE' && "● "}{event.title}
                   </div>
                 ))}
               </div>

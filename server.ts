@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
 import dotenv from "dotenv";
-import { pool } from "./server/config/database.js";
+import { db } from "./server/config/database.js";
 import { initDatabase } from "./server/services/dbInit.js";
 
 // Import Routes
@@ -49,7 +49,7 @@ async function startServer() {
         return res.status(400).json({ error: "Invalid table name" });
       }
 
-      const [rows] = await pool.query(`SELECT * FROM \`${table}\` LIMIT 100`);
+      const [rows]: any = await db.query(`SELECT * FROM \`${table}\` LIMIT 100`);
       res.json(rows);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

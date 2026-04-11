@@ -27,10 +27,9 @@ interface NotificationsViewProps {
   userId: number;
   userRole: 'STUDENT' | 'TEACHER';
   token: string | null;
-  onClose?: () => void;
 }
 
-export const NotificationsView: React.FC<NotificationsViewProps> = ({ userId, userRole, token, onClose }) => {
+export const NotificationsView: React.FC<NotificationsViewProps> = ({ userId, userRole, token }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,11 +120,6 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ userId, us
               <p className="portal-header-subtitle">Centralized hub for course invitations and join requests</p>
             </div>
           </div>
-          {onClose && (
-            <button onClick={onClose} className="portal-close-button">
-              <X className="w-6 h-6" />
-            </button>
-          )}
         </div>
       </div>
 

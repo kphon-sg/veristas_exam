@@ -1,7 +1,7 @@
-import { pool } from "../config/database.js";
+import { db } from "../config/database.js";
 
 export async function mapSubmission(sub: any) {
-  const [answerRows] = await pool.query(`
+  const [answerRows]: any = await db.query(`
     SELECT sa.*, q.question_text, q.question_type, q.points as max_points
     FROM student_answers sa
     JOIN questions q ON sa.question_id = q.id
@@ -10,9 +10,9 @@ export async function mapSubmission(sub: any) {
   
   const mappedAnswers = [];
   for (const ans of answerRows as any[]) {
-    const [optionRows] = await pool.query("SELECT * FROM question_options WHERE question_id = ? ORDER BY id ASC", [ans.question_id]);
-    const options = (optionRows as any[]).map(o => o.option_text);
-    const correctOptionIdx = (optionRows as any[]).findIndex(o => o.is_correct === 1);
+    const [optionRows]: any = await db.query("SELECT * FROM question_options WHERE question_id = ? ORDER BY id ASC", [ans.question_id]);
+    const options = optionRows.map((o: any) => o.option_text);
+    const correctOptionIdx = optionRows.findIndex((o: any) => o.is_correct === 1);
     
     mappedAnswers.push({ 
       id: Number(ans.id),
@@ -23,14 +23,14 @@ export async function mapSubmission(sub: any) {
       maxPoints: ans.max_points,
       correctAnswer: correctOptionIdx !== -1 ? correctOptionIdx : null,
       options: options,
-      selectedOption: ans.selected_option_id ? (optionRows as any[]).findIndex(o => o.id === ans.selected_option_id) : null,
+      selectedOption: ans.selected_option_id ? optionRows.findIndex((o: any) => o.id === ans.selected_option_id) : null,
       answerText: ans.answer_text,
       studentAnswer: ans.answer_text, // Alias for frontend
       pointsEarned: ans.awarded_points
     });
   }
   
-  const [violationRows] = await pool.query("SELECT * FROM violations WHERE submission_id = ? ORDER BY timestamp ASC", [sub.id]);
+  const [violationRows]: any = await db.query("SELECT * FROM violations WHERE submission_id = ? ORDER BY timestamp ASC", [sub.id]);
   const mappedViolations = (violationRows as any[]).map((v: any) => ({
     id: Number(v.id),
     submissionId: Number(v.submission_id),
@@ -56,15 +56,30 @@ export async function mapSubmission(sub: any) {
     startTime: sub.start_time,
     endTime: sub.end_time,
     submittedAt: sub.submitted_at,
+    submitted_at: sub.submitted_at,
     timestamp: sub.submitted_at, // Alias for frontend
     durationSeconds: sub.duration_seconds,
+    duration_seconds: sub.duration_seconds,
     status: sub.status,
     autoTerminationReason: sub.auto_termination_reason,
+    auto_termination_reason: sub.auto_termination_reason,
     totalScore: Number(sub.total_score || 0),
+    maxScore: Number(sub.total_score || 0), // Alias for frontend
     score: Number(sub.score || 0),
+    total_score: Number(sub.total_score || 0), // Underscore version for compatibility
+    totalQuestions: Number(sub.total_questions || 0),
+    total_questions: Number(sub.total_questions || 0), // Underscore version
     cheatingStatus: sub.cheating_status,
+    cheating_status: sub.cheating_status,
     riskScore: Number(sub.risk_score || 0),
+    risk_score: Number(sub.risk_score || 0),
     totalViolationCount: Number(sub.total_violation_count || 0),
+    total_violation_count: Number(sub.total_violation_count || 0),
+    quiz_title: sub.quiz_name || sub.quizTitle,
+    student_name: sub.studentName,
+    student_code: sub.student_code,
+    course_name: sub.courseName || sub.className,
+    course_code: sub.courseCode || sub.classCode,
     lowViolationCount: Number(sub.low_violation_count || 0),
     mediumViolationCount: Number(sub.medium_violation_count || 0),
     highViolationCount: Number(sub.high_violation_count || 0),

@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { pool } from "../config/database.js";
+import { db } from "../config/database.js";
 import { authenticateToken, AuthRequest } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -37,6 +37,30 @@ const upload = multer({
   },
 });
 
+// Get Student Profile Endpoint
+router.get("/student/profile", authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const [rows]: any = await db.query(`
+      SELECT u.id, u.username, u.full_name, u.email, u.student_code, u.role, u.department, u.age, u.profile_picture,
+             sd.major, sd.year_of_study, sd.bio, sd.gpa
+      FROM users u
+      LEFT JOIN student_details sd ON u.id = sd.user_id
+      WHERE u.id = ?
+    `, [userId]);
+
+    const profile = rows[0];
+    if (!profile) return res.status(404).json({ error: "Profile not found" });
+
+    res.json(profile);
+  } catch (error: any) {
+    console.error("[USER] Fetch student profile error:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
+  }
+});
+
 // Update Profile Endpoint
 router.put("/update-profile", authenticateToken, upload.single("profilePicture"), async (req: AuthRequest, res) => {
   try {
@@ -47,8 +71,8 @@ router.put("/update-profile", authenticateToken, upload.single("profilePicture")
     const profilePicture = req.file ? `/uploads/profiles/${req.file.filename}` : undefined;
 
     // 1. Fetch current user data
-    const [userRows] = await pool.query("SELECT * FROM users WHERE id = ?", [userId]);
-    const user = (userRows as any)[0];
+    const [userRows]: any = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
+    const user = userRows[0];
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -103,11 +127,11 @@ router.put("/update-profile", authenticateToken, upload.single("profilePicture")
 
     updateValues.push(userId);
     const updateQuery = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
-    await pool.execute(updateQuery, updateValues);
+    await db.query(updateQuery, updateValues);
 
     // 4. Fetch updated user data
-    const [updatedUserRows] = await pool.query("SELECT id, username, full_name, email, role, department, profile_picture, phone_number, created_at FROM users WHERE id = ?", [userId]);
-    const updatedUser = (updatedUserRows as any)[0];
+    const [updatedUserRows]: any = await db.query("SELECT id, username, full_name, email, role, department, profile_picture, phone_number, created_at FROM users WHERE id = ?", [userId]);
+    const updatedUser = updatedUserRows[0];
 
     res.json({
       message: "Profile updated successfully",

@@ -17,7 +17,7 @@ import { cn } from '../../lib/utils';
 interface QuizHistoryProps {
   userId: number;
   courseId?: number | null;
-  onClose: () => void;
+  onClose?: () => void;
   authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
@@ -219,7 +219,7 @@ export function QuizHistory({ userId, courseId, onClose, authenticatedFetch }: Q
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="portal-card-header flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
           <div className="portal-header-icon-box">
@@ -233,13 +233,14 @@ export function QuizHistory({ userId, courseId, onClose, authenticatedFetch }: Q
         <button 
           onClick={onClose}
           className="portal-close-button"
+          title="Back to Dashboard"
         >
           <X className="w-6 h-6" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
-        <div className="max-w-4xl mx-auto mb-8">
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/30">
+        <div className="mb-8">
           <div className="flex p-1.5 bg-slate-200/50 rounded-2xl w-fit">
             <button
               onClick={() => setActiveTab('GRADED')}
@@ -284,71 +285,73 @@ export function QuizHistory({ userId, courseId, onClose, authenticatedFetch }: Q
             </p>
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto">
+          <div className="w-full">
             <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quiz Title</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Class</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Teacher</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Attempt Date</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Final Score</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredSubmissions.map((sub) => (
-                    <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center border",
-                            sub.status === 'GRADED' ? "bg-emerald-50 border-emerald-100 text-emerald-500" : "bg-amber-50 border-amber-100 text-amber-500"
-                          )}>
-                            {sub.status === 'GRADED' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
-                          </div>
-                          <span className="font-bold text-slate-800 group-hover:text-veritas-indigo transition-colors">{sub.quizTitle || sub.quizName}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className="text-sm text-slate-600 font-medium">{sub.className || 'General'}</span>
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className="text-sm text-slate-600 font-medium">{sub.teacherName || 'N/A'}</span>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                          <Calendar className="w-4 h-4 text-slate-300" />
-                          {formatDate(sub.timestamp)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-5 text-center">
-                        {sub.status === 'GRADED' ? (
-                          <div className="inline-flex flex-col items-center">
-                            <span className="text-sm font-black text-veritas-indigo font-mono">{sub.score}/{sub.totalScore}</span>
-                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Completed</span>
-                          </div>
-                        ) : (
-                          <div className="inline-flex flex-col items-center">
-                            <span className="text-sm font-black text-amber-500 font-mono italic">Waiting</span>
-                            <span className="text-[9px] font-black text-amber-400 uppercase tracking-tighter">Reviewing</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-5 text-right">
-                        <button
-                          onClick={() => setSelectedSubmission(sub)}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-veritas-indigo hover:text-white text-slate-600 text-xs font-black rounded-xl transition-all"
-                        >
-                          View Details
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quiz Title</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Class</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Teacher</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Attempt Date</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Final Score</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredSubmissions.map((sub) => (
+                      <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "w-10 h-10 rounded-xl flex items-center justify-center border",
+                              sub.status === 'GRADED' ? "bg-emerald-50 border-emerald-100 text-emerald-500" : "bg-amber-50 border-amber-100 text-amber-500"
+                            )}>
+                              {sub.status === 'GRADED' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                            </div>
+                            <span className="font-bold text-slate-800 group-hover:text-veritas-indigo transition-colors">{sub.quizTitle || sub.quizName}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className="text-sm text-slate-600 font-medium">{sub.className || 'General'}</span>
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className="text-sm text-slate-600 font-medium">{sub.teacherName || 'N/A'}</span>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                            <Calendar className="w-4 h-4 text-slate-300" />
+                            {formatDate(sub.timestamp)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-5 text-center">
+                          {sub.status === 'GRADED' ? (
+                            <div className="inline-flex flex-col items-center">
+                              <span className="text-sm font-black text-veritas-indigo font-mono">{sub.score}/{sub.totalScore}</span>
+                              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Completed</span>
+                            </div>
+                          ) : (
+                            <div className="inline-flex flex-col items-center">
+                              <span className="text-sm font-black text-amber-500 font-mono italic">Waiting</span>
+                              <span className="text-[9px] font-black text-amber-400 uppercase tracking-tighter">Reviewing</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-5 text-right">
+                          <button
+                            onClick={() => setSelectedSubmission(sub)}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-veritas-indigo hover:text-white text-slate-600 text-xs font-black rounded-xl transition-all"
+                          >
+                            View Details
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

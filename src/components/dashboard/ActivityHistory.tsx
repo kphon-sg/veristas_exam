@@ -42,11 +42,11 @@ interface Pagination {
 interface ActivityHistoryProps {
   userId: number;
   role: 'TEACHER' | 'STUDENT';
-  onClose?: () => void;
   authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>;
+  onClose?: () => void;
 }
 
-export const ActivityHistory: React.FC<ActivityHistoryProps> = ({ userId, role, onClose, authenticatedFetch }) => {
+export const ActivityHistory: React.FC<ActivityHistoryProps> = ({ userId, role, authenticatedFetch, onClose }) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);

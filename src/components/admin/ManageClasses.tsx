@@ -380,7 +380,7 @@ export const ManageClasses: React.FC<ManageClassesProps> = ({ teacherId, teacher
               {classes.map(course => (
                 <motion.div 
                   key={course.id}
-                  whileHover={{ translateY: -4, shadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
+                  whileHover={{ translateY: -4, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' }}
                   onClick={() => setSelectedClass(course)}
                   className="p-6 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:border-veritas-indigo transition-all shadow-sm group relative overflow-hidden"
                 >

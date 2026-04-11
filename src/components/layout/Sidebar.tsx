@@ -16,8 +16,8 @@ import {
 import { cn } from '../../lib/utils';
 
 interface SidebarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
   onLogout: () => void;
   isOpen: boolean;
   onClose: () => void;
@@ -63,7 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const mainNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'courses', label: 'My Courses', icon: BookOpen },
-    ...(userRole !== 'TEACHER' ? [{ id: 'join-course', label: 'Join Course', icon: Plus }] : []),
+    { id: 'join-course', label: 'Join Course', icon: Plus },
     { 
       id: userRole === 'TEACHER' ? 'grading-management' : 'quiz-history', 
       label: userRole === 'TEACHER' ? 'Grading Management' : 'Quiz History', 
@@ -71,7 +71,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadCount },
-  ];
+  ].filter(item => {
+    if (item.id === 'join-course' && userRole === 'TEACHER') return false;
+    return true;
+  });
 
   const settingsItems = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -81,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const NavItem = ({ item, isActive }: { item: any, isActive: boolean }) => (
     <button
       onClick={() => {
-        onTabChange(item.id);
+        onTabChange?.(item.id);
         if (window.innerWidth < 768) onClose();
       }}
       className={cn(
