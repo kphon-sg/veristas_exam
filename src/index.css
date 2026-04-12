@@ -17,9 +17,9 @@
   --color-exam-bg: #f8fafc;
   
   /* VeritasExam Branding Colors */
-  --color-veritas-deep: #0f766e;
-  --color-veritas-indigo: #14b8a6;
-  --color-veritas-light: #f8fafc;
+  --color-veritas-deep: #047857;
+  --color-veritas-indigo: #10b981;
+  --color-veritas-light: #ecfdf5;
 }
 
 @layer base {
@@ -46,7 +46,7 @@
   }
   
   .portal-card-header {
-    @apply bg-gradient-to-r from-veritas-indigo to-emerald-400 border-b border-white/10 text-white px-8 py-6 relative overflow-hidden;
+    @apply bg-gradient-to-r from-emerald-500 to-teal-600 border-b border-white/10 text-white px-8 py-6 relative overflow-hidden;
   }
   
   .portal-card-header::before {

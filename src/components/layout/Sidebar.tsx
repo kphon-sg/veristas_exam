@@ -90,7 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       className={cn(
         "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group w-full text-left relative",
         isActive 
-          ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20" 
+          ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20" 
           : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
       )}
     >
@@ -125,7 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Header / Logo */}
         <div className="p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-600/20">
+            <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-600/20">
               <GraduationCap className="w-6 h-6 text-white" />
             </div>
             <div>

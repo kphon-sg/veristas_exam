@@ -1101,7 +1101,7 @@ export default function App() {
               </div>
             </div>
           ) : (
-            <div className="min-h-screen bg-[#f4f7f9] flex overflow-hidden font-sans selection:bg-violet-600/10">
+            <div className="min-h-screen bg-[#f4f7f9] flex overflow-hidden font-sans selection:bg-emerald-600/10">
               <Sidebar 
                 activeTab={activeTab} 
                 onTabChange={handleTabChange} 
@@ -1120,7 +1120,7 @@ export default function App() {
                       <Menu className="w-6 h-6" />
                     </button>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center shadow-lg shadow-violet-600/20">
+                      <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-600/20">
                         <GraduationCap className="w-5 h-5 text-white" />
                       </div>
                       <span className="font-black text-slate-800 text-sm tracking-tight">VeritasExam</span>
@@ -1354,9 +1354,9 @@ export default function App() {
                           onClick={() => setSelectedTeacherCourseId(cls.id)}
                           className="bg-white border border-slate-200 rounded-3xl p-8 hover:border-veritas-indigo hover:shadow-xl transition-all cursor-pointer group relative overflow-hidden"
                         >
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform" />
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform" />
                           <div className="relative z-10">
-                            <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100 mb-6 group-hover:bg-veritas-indigo group-hover:text-white transition-all">
+                            <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center border border-emerald-100 mb-6 group-hover:bg-veritas-indigo group-hover:text-white transition-all">
                               <BookOpen className="w-7 h-7" />
                             </div>
                             <span className="text-[10px] font-mono text-slate-400 uppercase font-black tracking-[0.2em] mb-2 block">{cls.courseCode}</span>
@@ -1564,12 +1564,12 @@ export default function App() {
                               {courseSearchResults.map(course => (
                                 <div key={course.id} className="p-6 bg-white border border-slate-200 rounded-2xl flex items-center justify-between group hover:border-veritas-indigo transition-all shadow-sm">
                                   <div className="flex items-center gap-6">
-                                    <div className="w-14 h-14 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover:bg-indigo-50 transition-colors">
+                                    <div className="w-14 h-14 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover:bg-emerald-50 transition-colors">
                                       <BookOpen className="w-6 h-6 text-slate-400 group-hover:text-veritas-indigo" />
                                     </div>
                                     <div>
                                       <div className="flex items-center gap-3 mb-1">
-                                        <span className="text-[10px] font-mono font-black text-veritas-indigo bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">{course.courseCode}</span>
+                                        <span className="text-[10px] font-mono font-black text-veritas-indigo bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">{course.courseCode}</span>
                                         <h4 className="text-lg font-black text-slate-800">{course.name}</h4>
                                       </div>
                                       <p className="text-xs text-slate-500 font-medium">Teacher: <span className="text-slate-700 font-bold">{course.teacherName}</span> • {course.schoolName}</p>
@@ -1623,7 +1623,7 @@ export default function App() {
                           <motion.div key={quiz.id} whileHover={{ scale: 1.01 }} className={cn("portal-card hover:border-veritas-indigo transition-all shadow-sm", (completed || isScheduled) && "opacity-80")}>
                             <div className="flex flex-col md:flex-row">
                               <div className="w-full md:w-40 flex flex-col items-center justify-center p-8 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100">
-                                <span className="text-4xl font-black text-veritas-indigo font-mono tracking-tighter">{quiz.classId}</span>
+                                <span className="text-4xl font-black text-emerald-600 font-mono tracking-tighter">{quiz.classId}</span>
                               </div>
                               <div className="flex-1 p-8 flex flex-col md:flex-row md:items-center justify-between gap-8 relative">
                                 <div className="space-y-4">
@@ -1647,7 +1647,7 @@ export default function App() {
                                   }} 
                                   className={cn(
                                     "px-8 py-3 rounded-md text-xs font-black transition-all uppercase tracking-widest", 
-                                    (expired || completed || isScheduled || isExpiredQuiz) ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-gradient-to-r from-veritas-deep to-veritas-indigo hover:opacity-90 text-white shadow-sm"
+                                    (expired || completed || isScheduled || isExpiredQuiz) ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-gradient-to-r from-emerald-700 to-emerald-500 hover:opacity-90 text-white shadow-sm"
                                   )}
                                 >
                                   {completed ? "Completed" : isScheduled ? "Scheduled" : (expired || isExpiredQuiz) ? "Closed" : "Start Setup"}

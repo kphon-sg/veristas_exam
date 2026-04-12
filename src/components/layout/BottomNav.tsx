@@ -40,14 +40,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ userRole = 'STUDENT', acti
           end={item.path === '/dashboard'}
           className={({ isActive }) => cn(
             "flex flex-col items-center gap-1 transition-all duration-200",
-            isActive ? "text-violet-600" : "text-slate-600 hover:text-slate-800"
+            isActive ? "text-emerald-600" : "text-slate-600 hover:text-slate-800"
           )}
         >
           {({ isActive }) => (
             <>
               <item.icon className={cn(
                 "w-5 h-5",
-                isActive ? "fill-violet-600/10" : ""
+                isActive ? "fill-emerald-600/10" : ""
               )} />
               <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
             </>

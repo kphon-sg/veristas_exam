@@ -136,10 +136,10 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
         
         {/* Quick Action: Continue Learning */}
         <motion.div variants={itemVariants} className="relative overflow-hidden bg-slate-900 rounded-2xl p-8 text-white shadow-xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full -mr-32 -mt-32 blur-3xl" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -mr-32 -mt-32 blur-3xl" />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-300 border border-indigo-500/30">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 rounded-full text-[10px] font-bold uppercase tracking-widest text-emerald-300 border border-emerald-500/30">
                 <PlayCircle className="w-3 h-3" /> Recommended Action
               </div>
               {mostUrgentQuiz ? (
@@ -162,7 +162,7 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
             {mostUrgentQuiz && (
               <button 
                 onClick={() => onQuizSelect?.(mostUrgentQuiz)}
-                className="group flex items-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-xl font-bold text-sm hover:bg-indigo-50 transition-all shadow-lg shadow-white/5"
+                className="group flex items-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-xl font-bold text-sm hover:bg-emerald-50 transition-all shadow-lg shadow-white/5"
               >
                 Start Now
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -179,7 +179,7 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
               <p className="text-xs text-slate-500 font-medium">Overall completion across all enrolled modules</p>
             </div>
             <div className="text-right">
-              <span className="text-3xl font-bold text-indigo-600">
+              <span className="text-3xl font-bold text-emerald-600">
                 {totalAssigned > 0 ? Math.round((completedCount / totalAssigned) * 100) : 0}%
               </span>
             </div>
@@ -196,7 +196,7 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${totalAssigned > 0 ? (completedCount / totalAssigned) * 100 : 0}%` }}
-                    className="h-full bg-indigo-600 rounded-full"
+                    className="h-full bg-emerald-600 rounded-full"
                   />
                 </div>
               </div>
@@ -227,7 +227,7 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
                   <motion.path
                     initial={{ strokeDasharray: "0, 100" }}
                     animate={{ strokeDasharray: `${totalAssigned > 0 ? (completedCount / totalAssigned) * 100 : 0}, 100` }}
-                    className="text-indigo-600"
+                    className="text-emerald-600"
                     strokeWidth="3"
                     strokeLinecap="round"
                     stroke="currentColor"
@@ -260,8 +260,8 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
                 <AreaChart data={recentResults}>
                   <defs>
                     <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -289,7 +289,7 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
                   <Area 
                     type="monotone" 
                     dataKey="score" 
-                    stroke="#4f46e5" 
+                    stroke="#10b981" 
                     strokeWidth={3}
                     fillOpacity={1} 
                     fill="url(#colorScore)" 
@@ -313,10 +313,10 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
         <motion.div variants={itemVariants} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-indigo-600" /> Upcoming Deadlines
+              <Calendar className="w-4 h-4 text-emerald-600" /> Upcoming Deadlines
             </h3>
             {onViewHistory && (
-              <button onClick={onViewHistory} className="text-[10px] font-bold text-indigo-600 hover:underline">
+              <button onClick={onViewHistory} className="text-[10px] font-bold text-emerald-600 hover:underline">
                 View All
               </button>
             )}
@@ -337,7 +337,7 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="space-y-0.5">
-                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1">{quiz.title}</h4>
+                        <h4 className="text-xs font-bold text-slate-900 group-hover:text-emerald-600 transition-colors line-clamp-1">{quiz.title}</h4>
                         <p className="text-[10px] text-slate-500 font-medium">{quiz.courseCode || 'General Class'}</p>
                       </div>
                       <div className={cn(
@@ -351,7 +351,7 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
                       <span className="text-slate-500 font-medium">
                         Due in {diffDays <= 0 ? 'today' : `${diffDays} days`}
                       </span>
-                      <ArrowRight className="w-3 h-3 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
+                      <ArrowRight className="w-3 h-3 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </div>
                 );
@@ -366,28 +366,28 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
         </motion.div>
 
         {/* Quick Stats / Achievements */}
-        <motion.div variants={itemVariants} className="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200">
+        <motion.div variants={itemVariants} className="bg-emerald-600 rounded-2xl p-6 text-white shadow-lg shadow-emerald-200">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
               <Trophy className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="text-sm font-bold">Academic Achievement</h3>
-              <p className="text-[10px] text-indigo-100">Your current standing</p>
+              <p className="text-[10px] text-emerald-100">Your current standing</p>
             </div>
           </div>
           
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-xs text-indigo-100">Average Score</span>
+              <span className="text-xs text-emerald-100">Average Score</span>
               <span className="text-lg font-bold">{averageScore.toFixed(0)}%</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-indigo-100">Quizzes Completed</span>
+              <span className="text-xs text-emerald-100">Quizzes Completed</span>
               <span className="text-lg font-bold">{completedCount}</span>
             </div>
             <div className="pt-4 border-t border-white/10">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-indigo-200">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-emerald-200">
                 <Target className="w-3 h-3" /> Keep it up!
               </div>
             </div>
@@ -400,7 +400,7 @@ export const StudentStatsDashboard: React.FC<StudentStatsDashboardProps> = ({ qu
           <p className="text-[10px] text-slate-500 leading-relaxed mb-4">
             If you encounter any issues with your examinations or need technical support, our team is here to help.
           </p>
-          <button className="text-[10px] font-bold text-indigo-600 hover:underline flex items-center gap-1">
+          <button className="text-[10px] font-bold text-emerald-600 hover:underline flex items-center gap-1">
             Contact Support <ChevronRight className="w-3 h-3" />
           </button>
         </motion.div>

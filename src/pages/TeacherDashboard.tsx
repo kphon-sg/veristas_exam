@@ -71,7 +71,7 @@ export const TeacherDashboard = ({ user }: { user: any }) => {
     { label: 'Total Students', value: stats.totalStudents.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', trend: 'Enrolled in your courses' },
     { label: 'Active Quizzes', value: stats.activeQuizzes.toString(), icon: ClipboardList, color: 'text-emerald-600', bg: 'bg-emerald-50', trend: 'Currently published' },
     { label: 'Pending Submissions', value: stats.pendingSubmissions.toString(), icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50', trend: 'Needs review' },
-    { label: 'Class Performance', value: `${stats.classPerformance}%`, icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50', trend: 'Average score' },
+    { label: 'Class Performance', value: `${stats.classPerformance}%`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', trend: 'Average score' },
   ];
 
   return (
@@ -103,11 +103,11 @@ export const TeacherDashboard = ({ user }: { user: any }) => {
         <Card className="border-none shadow-sm overflow-hidden">
           <CardContent className="p-8 flex items-center justify-between bg-white">
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
+              <div className="w-20 h-20 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200">
                 <ScanFace className="w-10 h-10 text-white" />
               </div>
               <div className="space-y-2">
-                <h2 className="text-3xl font-black tracking-tight text-slate-800">Welcome back, <span className="text-indigo-600">{user?.full_name?.split(' ')[0] || 'Teacher'}!</span></h2>
+                <h2 className="text-3xl font-black tracking-tight text-slate-800">Welcome back, <span className="text-emerald-600">{user?.full_name?.split(' ')[0] || 'Teacher'}!</span></h2>
                 <div className="flex items-center gap-3">
                   <Badge variant="warning" className="bg-amber-50 text-amber-600 border-amber-100">● Teacher Account</Badge>
                   <p className="text-slate-400 text-sm font-medium">You have {stats.activeQuizzes} active quizzes this week.</p>
@@ -116,7 +116,7 @@ export const TeacherDashboard = ({ user }: { user: any }) => {
             </div>
             <div className="flex items-center gap-3">
               <button className="px-6 py-2.5 bg-white text-slate-600 border border-slate-200 font-bold rounded-xl hover:bg-slate-50 transition-all">View Profile</button>
-              <button className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-indigo-200">Create Quiz</button>
+              <button className="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-emerald-200">Create Quiz</button>
             </div>
           </CardContent>
         </Card>
@@ -211,7 +211,7 @@ export const TeacherDashboard = ({ user }: { user: any }) => {
                 <Filter className="w-4 h-4" />
                 Filter
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg shadow-indigo-200">
+              <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg shadow-emerald-200">
                 <Plus className="w-4 h-4" />
                 Create Quiz
               </button>

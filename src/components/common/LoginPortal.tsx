@@ -72,9 +72,9 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex font-sans selection:bg-veritas-indigo/30 overflow-hidden">
+    <div className="min-h-screen flex font-sans selection:bg-emerald-500/30 overflow-hidden">
       {/* 🔵 Left Column: Branding Section (45%) */}
-      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-veritas-deep to-veritas-indigo relative overflow-hidden flex-col p-16 text-white">
+      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-veritas-deep to-emerald-600 relative overflow-hidden flex-col p-16 text-white">
         {/* Dot Pattern Overlay */}
         <div className="absolute inset-0 dot-pattern opacity-20" />
         
@@ -132,7 +132,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
       <div className="w-full lg:w-[55%] bg-white flex items-center justify-center p-8 relative overflow-y-auto">
         {/* Mobile Logo (only visible on small screens) */}
         <div className="absolute top-8 left-8 lg:hidden flex items-center gap-2">
-          <ScanFace className="w-6 h-6 text-veritas-indigo" />
+          <ScanFace className="w-6 h-6 text-emerald-600" />
           <span className="text-lg font-black tracking-tight uppercase text-slate-900">VeritasExam</span>
         </div>
 
@@ -166,7 +166,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                   : 'text-slate-500 hover:text-slate-900 hover:bg-white/50'
                 }`}
               >
-                <GraduationCap className={`w-4 h-4 ${loginType === 'STUDENT' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <GraduationCap className={`w-4 h-4 ${loginType === 'STUDENT' ? 'text-emerald-600' : 'text-slate-400'}`} />
                 Student {isRegistering ? 'Sign Up' : 'Login'}
               </button>
               <button 
@@ -177,7 +177,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                   : 'text-slate-500 hover:text-slate-900 hover:bg-white/50'
                 }`}
               >
-                <UserCircle className={`w-4 h-4 ${loginType === 'TEACHER' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <UserCircle className={`w-4 h-4 ${loginType === 'TEACHER' ? 'text-emerald-600' : 'text-slate-400'}`} />
                 Teacher {isRegistering ? 'Sign Up' : 'Login'}
               </button>
             </div>
@@ -196,7 +196,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-900 uppercase tracking-[0.15em] ml-1">Email Address</label>
                         <div className="relative group">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-600 transition-colors">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-emerald-600 transition-colors">
                             <Mail className="w-4 h-4" />
                           </div>
                           <input 
@@ -205,7 +205,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                             placeholder="Email, Username or ID"
                             value={loginData.studentId}
                             onChange={(e) => setLoginData({ ...loginData, studentId: e.target.value })}
-                            className="w-full bg-white border border-slate-300 rounded-xl py-4 pl-12 pr-4 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/5 transition-all text-sm font-bold"
+                            className="w-full bg-white border border-slate-300 rounded-xl py-4 pl-12 pr-4 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold"
                           />
                         </div>
                       </div>
@@ -214,10 +214,10 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                       <div className="space-y-2">
                         <div className="flex items-center justify-between px-1">
                           <label className="text-[10px] font-black text-slate-900 uppercase tracking-[0.15em]">Password</label>
-                          <a href="#" className="text-[10px] text-indigo-600 hover:underline font-black uppercase tracking-wider">Forgot?</a>
+                          <a href="#" className="text-[10px] text-emerald-600 hover:underline font-black uppercase tracking-wider">Forgot?</a>
                         </div>
                         <div className="relative group">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-600 transition-colors">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-emerald-600 transition-colors">
                             <Lock className="w-4 h-4" />
                           </div>
                           <input 
@@ -226,7 +226,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                             placeholder="••••••••"
                             value={loginData.password}
                             onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                            className="w-full bg-white border border-slate-300 rounded-xl py-4 pl-12 pr-4 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/5 transition-all text-sm font-bold"
+                            className="w-full bg-white border border-slate-300 rounded-xl py-4 pl-12 pr-4 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/5 transition-all text-sm font-bold"
                           />
                         </div>
                       </div>
@@ -236,7 +236,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                         <input 
                           type="checkbox" 
                           id="remember" 
-                          className="w-4 h-4 rounded border-slate-300 text-veritas-indigo focus:ring-veritas-indigo cursor-pointer" 
+                          className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600 cursor-pointer" 
                         />
                         <label htmlFor="remember" className="text-xs font-bold text-slate-500 cursor-pointer select-none">Remember this device</label>
                       </div>
@@ -245,7 +245,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                       <button 
                         type="submit" 
                         disabled={isLoading}
-                        className="w-full bg-gradient-to-r from-indigo-700 to-violet-800 hover:from-indigo-800 hover:to-violet-900 active:scale-[0.98] text-white font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl shadow-indigo-500/30 transition-all flex items-center justify-center gap-2 group text-xs mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white font-black uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 group text-xs mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Login to Portal'}
                         {!isLoading && <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />}
@@ -257,7 +257,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                           <button 
                             type="button"
                             onClick={() => setIsRegistering(true)}
-                            className="text-veritas-indigo hover:underline uppercase tracking-wider"
+                            className="text-emerald-600 hover:underline uppercase tracking-wider"
                           >
                             Sign Up Now
                           </button>
@@ -276,7 +276,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                       <button 
                         type="button"
                         onClick={() => setIsRegistering(false)}
-                        className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-veritas-indigo transition-colors mb-4"
+                        className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-emerald-600 transition-colors mb-4"
                       >
                         <ArrowLeft className="w-3 h-3" />
                         Back to Login
@@ -287,7 +287,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                         <div className="space-y-1">
                           <label className="text-[9px] font-black text-slate-900 uppercase tracking-widest ml-1">Full Name</label>
                           <div className="relative group">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-veritas-indigo transition-colors">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-emerald-600 transition-colors">
                               <User className="w-3.5 h-3.5" />
                             </div>
                             <input 
@@ -296,7 +296,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                               placeholder="John Doe"
                               value={regData.fullName}
                               onChange={(e) => setRegData({ ...regData, fullName: e.target.value })}
-                              className="w-full bg-white border border-slate-300 rounded-xl py-3 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-veritas-indigo transition-all text-xs font-bold"
+                              className="w-full bg-white border border-slate-300 rounded-xl py-3 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600 transition-all text-xs font-bold"
                             />
                           </div>
                         </div>
@@ -305,7 +305,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                         <div className="space-y-1">
                           <label className="text-[9px] font-black text-slate-900 uppercase tracking-widest ml-1">Email</label>
                           <div className="relative group">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-veritas-indigo transition-colors">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-emerald-600 transition-colors">
                               <Mail className="w-3.5 h-3.5" />
                             </div>
                             <input 
@@ -314,7 +314,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                               placeholder="john@edu.com"
                               value={regData.email}
                               onChange={(e) => setRegData({ ...regData, email: e.target.value })}
-                              className="w-full bg-white border border-slate-300 rounded-xl py-3 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-veritas-indigo transition-all text-xs font-bold"
+                              className="w-full bg-white border border-slate-300 rounded-xl py-3 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600 transition-all text-xs font-bold"
                             />
                           </div>
                         </div>
@@ -325,7 +325,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                         <div className="space-y-1">
                           <label className="text-[9px] font-black text-slate-900 uppercase tracking-widest ml-1">Password</label>
                           <div className="relative group">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-veritas-indigo transition-colors">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-emerald-600 transition-colors">
                               <Lock className="w-3.5 h-3.5" />
                             </div>
                             <input 
@@ -334,7 +334,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                               placeholder="Min 8 chars"
                               value={regData.password}
                               onChange={(e) => setRegData({ ...regData, password: e.target.value })}
-                              className="w-full bg-white border border-slate-300 rounded-xl py-3 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-veritas-indigo transition-all text-xs font-bold"
+                              className="w-full bg-white border border-slate-300 rounded-xl py-3 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600 transition-all text-xs font-bold"
                             />
                           </div>
                         </div>
@@ -343,7 +343,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                         <div className="space-y-1">
                           <label className="text-[9px] font-black text-slate-900 uppercase tracking-widest ml-1">Confirm</label>
                           <div className="relative group">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-veritas-indigo transition-colors">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-emerald-600 transition-colors">
                               <Lock className="w-3.5 h-3.5" />
                             </div>
                             <input 
@@ -352,7 +352,7 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
                               placeholder="Repeat password"
                               value={regData.confirmPassword}
                               onChange={(e) => setRegData({ ...regData, confirmPassword: e.target.value })}
-                              className="w-full bg-white border border-slate-300 rounded-xl py-3 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-veritas-indigo transition-all text-xs font-bold"
+                              className="w-full bg-white border border-slate-300 rounded-xl py-3 pl-10 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-600 transition-all text-xs font-bold"
                             />
                           </div>
                         </div>

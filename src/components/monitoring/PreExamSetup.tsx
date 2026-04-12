@@ -32,7 +32,6 @@ export const PreExamSetup: React.FC<PreExamSetupProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedCamera, setSelectedCamera] = useState<string>('');
-  const [selectedBackground, setSelectedBackground] = useState<string>('none');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -208,13 +207,6 @@ export const PreExamSetup: React.FC<PreExamSetupProps> = ({
     }
   };
 
-  const backgroundOptions = [
-    { id: 'none', label: 'None', icon: <X className="w-4 h-4" /> },
-    { id: 'blur', label: 'Blur', icon: <RefreshCw className="w-4 h-4" /> },
-    { id: 'office', label: 'Office', icon: <ImageIcon className="w-4 h-4" /> },
-    { id: 'library', label: 'Library', icon: <ImageIcon className="w-4 h-4" /> },
-  ];
-
   const checklistItems = [
     "Please sit down while using",
     "Only one face, please"
@@ -257,7 +249,6 @@ export const PreExamSetup: React.FC<PreExamSetupProps> = ({
               muted 
               className={cn(
                 "w-full h-full object-cover transition-all duration-700 absolute inset-0",
-                selectedBackground === 'blur' && "blur-xl scale-110",
                 (!isCameraActive || !!cameraError) && "opacity-0 pointer-events-none"
               )}
             />
@@ -346,9 +337,9 @@ export const PreExamSetup: React.FC<PreExamSetupProps> = ({
             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest font-mono">Pre-Exam Setup</p>
           </div>
 
-          <div className="space-y-8 flex-1">
+          <div className="space-y-10 flex-1">
             {/* Camera Selection */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">
                 <Camera className="w-3.5 h-3.5" /> Select Camera
               </label>
@@ -356,7 +347,7 @@ export const PreExamSetup: React.FC<PreExamSetupProps> = ({
                 <select 
                   value={selectedCamera}
                   onChange={(e) => setSelectedCamera(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-bold text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-veritas-indigo/20 focus:border-veritas-indigo transition-all cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-veritas-indigo/20 focus:border-veritas-indigo transition-all cursor-pointer shadow-sm"
                 >
                   {devices.map(device => (
                     <option key={device.deviceId} value={device.deviceId}>
@@ -365,36 +356,39 @@ export const PreExamSetup: React.FC<PreExamSetupProps> = ({
                   ))}
                   {devices.length === 0 && <option value="">No cameras found</option>}
                 </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none group-hover:text-veritas-indigo transition-colors" />
+                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none group-hover:text-veritas-indigo transition-colors" />
               </div>
             </div>
 
-            {/* Background Selection */}
-            <div className="space-y-3">
+            {/* System Requirements / Checklist */}
+            <div className="space-y-4">
               <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">
-                <Settings2 className="w-3.5 h-3.5" /> Background Effects
+                <CheckCircle2 className="w-3.5 h-3.5" /> Environment Check
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                {backgroundOptions.map(option => (
-                  <button
-                    key={option.id}
-                    onClick={() => setSelectedBackground(option.id)}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-sm font-bold",
-                      selectedBackground === option.id 
-                        ? "bg-veritas-indigo border-veritas-indigo text-white shadow-md" 
-                        : "bg-white border-slate-200 text-slate-600 hover:border-veritas-indigo/50"
-                    )}
-                  >
-                    {option.icon}
-                    {option.label}
-                  </button>
-                ))}
+              <div className="grid grid-cols-1 gap-3">
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
+                    <Video className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-slate-700">Camera Permission</p>
+                    <p className="text-[10px] text-slate-500 font-medium">Access granted and active</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-indigo-600" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-bold text-slate-700">Face Visibility</p>
+                    <p className="text-[10px] text-slate-500 font-medium">Ensure clear lighting</p>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Warning Box */}
-            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-4">
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5 flex gap-4 shadow-sm">
               <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
                 <AlertCircle className="w-5 h-5 text-amber-600" />
               </div>
