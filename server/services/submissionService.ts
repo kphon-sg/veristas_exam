@@ -1,4 +1,5 @@
 import { db } from "../config/database.js";
+import { calculateRiskScore } from "../utils/riskEngine.js";
 
 export async function mapSubmission(sub: any) {
   const [answerRows]: any = await db.query(`
@@ -30,20 +31,25 @@ export async function mapSubmission(sub: any) {
     });
   }
   
-  const [violationRows]: any = await db.query("SELECT * FROM violations WHERE submission_id = ? ORDER BY timestamp ASC", [sub.id]);
-  const mappedViolations = (violationRows as any[]).map((v: any) => ({
+  const [logRows]: any = await db.query("SELECT * FROM proctoring_logs WHERE submission_id = ? ORDER BY start_time ASC", [sub.id]);
+  const mappedViolations = (logRows as any[]).map((v: any) => ({
     id: Number(v.id),
     submissionId: Number(v.submission_id),
-    studentId: Number(v.student_id),
-    type: v.violation_type,
+    type: v.event_type,
     severity: v.severity,
-    timestamp: v.timestamp,
-    message: v.message,
-    deviceInfo: v.device_info,
-    browserInfo: v.browser_info,
-    ipAddress: v.ip_address,
-    duration: v.event_duration_seconds
+    timestamp: v.start_time,
+    endTime: v.end_time,
+    duration: v.duration,
+    message: v.message
   }));
+
+  // Calculate dynamic risk score
+  const { score: calculatedRiskScore, status: calculatedStatus } = calculateRiskScore(mappedViolations);
+
+  // Update DB with calculated values if they differ or are missing
+  if (sub.risk_score !== calculatedRiskScore || sub.cheating_status !== calculatedStatus) {
+    await db.query("UPDATE submissions SET risk_score = ?, cheating_status = ? WHERE id = ?", [calculatedRiskScore, calculatedStatus, sub.id]);
+  }
   
   return { 
     id: Number(sub.id),
@@ -69,27 +75,23 @@ export async function mapSubmission(sub: any) {
     total_score: Number(sub.total_score || 0), // Underscore version for compatibility
     totalQuestions: Number(sub.total_questions || 0),
     total_questions: Number(sub.total_questions || 0), // Underscore version
-    cheatingStatus: sub.cheating_status,
-    cheating_status: sub.cheating_status,
-    riskScore: Number(sub.risk_score || 0),
-    risk_score: Number(sub.risk_score || 0),
-    totalViolationCount: Number(sub.total_violation_count || 0),
-    total_violation_count: Number(sub.total_violation_count || 0),
+    cheatingStatus: calculatedStatus,
+    cheating_status: calculatedStatus,
+    riskScore: calculatedRiskScore,
+    risk_score: calculatedRiskScore,
+    totalViolationCount: mappedViolations.length,
+    total_violation_count: mappedViolations.length,
     quiz_title: sub.quiz_name || sub.quizTitle,
     student_name: sub.studentName,
     student_code: sub.student_code,
     course_name: sub.courseName || sub.className,
     course_code: sub.courseCode || sub.classCode,
-    lowViolationCount: Number(sub.low_violation_count || 0),
-    mediumViolationCount: Number(sub.medium_violation_count || 0),
-    highViolationCount: Number(sub.high_violation_count || 0),
-    tabSwitchCount: Number(sub.tab_switch_count || 0),
-    faceMissingCount: Number(sub.face_missing_count || 0),
-    lookingAwayCount: Number(sub.looking_away_count || 0),
-    multipleFacesCount: Number(sub.multiple_faces_count || 0),
     evaluationTimestamp: sub.evaluation_timestamp,
     teacherFeedback: sub.teacher_feedback,
     answers: mappedAnswers, 
-    violations: mappedViolations 
+    violations: mappedViolations,
+    lowViolationCount: mappedViolations.filter(v => String(v.severity).toUpperCase() === 'LOW').length,
+    mediumViolationCount: mappedViolations.filter(v => String(v.severity).toUpperCase() === 'MEDIUM').length,
+    highViolationCount: mappedViolations.filter(v => String(v.severity).toUpperCase() === 'HIGH').length,
   };
 }

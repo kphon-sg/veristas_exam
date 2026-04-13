@@ -14,6 +14,18 @@ export const ExamSetupPage: React.FC<ExamSetupPageProps> = ({ token, onJoin }) =
   const [quiz, setQuiz] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModelsLoaded, setIsModelsLoaded] = useState(false);
+  const [modelLoadProgress, setModelLoadProgress] = useState(0);
+
+  // Background Model Pre-loading
+  useEffect(() => {
+    if (quiz && !isModelsLoaded) {
+      console.log("[ExamSetupPage] Starting background model pre-loading...");
+      // The useFaceDetection hook in PreExamSetup will handle the actual loading
+      // when we pass isModelsLoaded={true}. Here we just signal that it's okay to start.
+      setIsModelsLoaded(true);
+    }
+  }, [quiz, isModelsLoaded]);
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -76,7 +88,9 @@ export const ExamSetupPage: React.FC<ExamSetupPageProps> = ({ token, onJoin }) =
   return (
     <PreExamSetup 
       quizTitle={quiz.title}
-      isModelsLoaded={true}
+      isModelsLoaded={isModelsLoaded}
+      modelLoadProgress={modelLoadProgress}
+      onLoadProgress={setModelLoadProgress}
       onJoin={(stream) => onJoin(quiz, stream)}
       onLeave={() => navigate('/')}
     />

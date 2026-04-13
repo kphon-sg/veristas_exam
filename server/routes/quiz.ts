@@ -348,7 +348,7 @@ router.post("/:id/start", async (req, res) => {
     const { studentId } = req.body;
 
     const [quizzes]: any = await db.query(`
-      SELECT q.title, c.course_name as courseName, c.course_code 
+      SELECT q.title, q.total_score, c.course_name as courseName, c.course_code 
       FROM quizzes q 
       JOIN courses c ON q.course_id = c.id 
       WHERE q.id = ?
@@ -360,8 +360,25 @@ router.post("/:id/start", async (req, res) => {
     const [students]: any = await db.query("SELECT full_name FROM users WHERE id = ?", [studentId]);
     const studentName = students[0] ? students[0].full_name : 'Student';
 
+    // Create or get existing IN_PROGRESS submission
+    const [existingSub]: any = await db.query(
+      "SELECT id FROM submissions WHERE quiz_id = ? AND student_id = ? AND status = 'IN_PROGRESS'",
+      [quizId, studentId]
+    );
+
+    let submissionId;
+    if (existingSub.length > 0) {
+      submissionId = existingSub[0].id;
+    } else {
+      const [subResult]: any = await db.query(`
+        INSERT INTO submissions (quiz_id, student_id, quiz_name, status, total_score, start_time)
+        VALUES (?, ?, ?, 'IN_PROGRESS', ?, NOW())
+      `, [quizId, studentId, quiz.title, quiz.total_score || 0]);
+      submissionId = subResult.insertId;
+    }
+
     await logActivity(studentId, 'QUIZ_STARTED', 'QUIZ', Number(quizId), `Student ${studentName} started quiz "${quiz.title}" for course ${quiz.course_code} - ${quiz.courseName}`);
-    res.json({ success: true });
+    res.json({ success: true, submissionId });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

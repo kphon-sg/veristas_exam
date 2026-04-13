@@ -30,7 +30,7 @@ interface Submission {
   className?: string;
   score: number;
   totalScore: number;
-  status: 'SUBMITTED' | 'GRADED' | 'IN_PROGRESS';
+  status: 'SUBMITTED' | 'GRADED' | 'IN_PROGRESS' | 'PENDING';
   timestamp: string;
   evaluationTimestamp?: string;
   teacherFeedback?: string;
@@ -78,7 +78,7 @@ export function QuizHistory({ userId, courseId, onClose, authenticatedFetch }: Q
 
   const filteredSubmissions = submissions.filter(sub => {
     if (activeTab === 'PENDING') {
-      return sub.status === 'SUBMITTED';
+      return sub.status === 'PENDING' || sub.status === 'SUBMITTED';
     }
     return sub.status === 'GRADED';
   });

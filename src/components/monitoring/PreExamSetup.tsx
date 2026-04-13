@@ -21,13 +21,17 @@ interface PreExamSetupProps {
   onJoin: (stream: MediaStream) => void;
   onLeave: () => void;
   isModelsLoaded: boolean;
+  modelLoadProgress?: number;
+  onLoadProgress?: (progress: number) => void;
 }
 
 export const PreExamSetup: React.FC<PreExamSetupProps> = ({ 
   quizTitle, 
   onJoin, 
   onLeave,
-  isModelsLoaded
+  isModelsLoaded,
+  modelLoadProgress = 0,
+  onLoadProgress
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
@@ -35,6 +39,7 @@ export const PreExamSetup: React.FC<PreExamSetupProps> = ({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isPreparing, setIsPreparing] = useState(false);
   const isJoiningRef = useRef(false);
 
   // Use the face detection hook
@@ -43,8 +48,9 @@ export const PreExamSetup: React.FC<PreExamSetupProps> = ({
     isModelsLoaded,
     isDetectionActive: true,
     videoRef,
-    onDetection: () => {}, // No need to report violations during setup
-    onFaceStatusChange: () => {}
+    onDetection: () => {}, 
+    onFaceStatusChange: () => {},
+    onLoadProgress
   });
 
   const getDevices = useCallback(async () => {
@@ -200,10 +206,26 @@ export const PreExamSetup: React.FC<PreExamSetupProps> = ({
     };
   }, [stopStream]);
 
-  const handleJoin = () => {
-    if (videoRef.current?.srcObject) {
-      isJoiningRef.current = true;
-      onJoin(videoRef.current.srcObject as MediaStream);
+  const handleJoin = async () => {
+    if (videoRef.current?.srcObject && !isPreparing) {
+      setIsPreparing(true);
+      
+      try {
+        console.log("[PreExamSetup] Starting sequential initialization...");
+        
+        // 1. Ensure Camera is stable
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 2. Warm up AI Model (already handled by useFaceDetection, but we wait a bit more for stability)
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 3. Final check and Join
+        isJoiningRef.current = true;
+        onJoin(videoRef.current.srcObject as MediaStream);
+      } catch (err) {
+        console.error("[PreExamSetup] Initialization failed:", err);
+        setIsPreparing(false);
+      }
     }
   };
 
@@ -401,20 +423,44 @@ export const PreExamSetup: React.FC<PreExamSetupProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-8 space-y-3">
-            <button 
-              onClick={handleJoin}
-              disabled={!isFaceDetected || !!cameraError || isInitializing}
-              className={cn(
-                "w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-lg",
-                (!isFaceDetected || !!cameraError || isInitializing)
-                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-veritas-deep to-veritas-indigo text-white hover:opacity-95 active:scale-[0.98]"
+            {/* Action Buttons */}
+            <div className="mt-8 space-y-3">
+              {/* Model Loading Progress Bar */}
+              {modelLoadProgress < 100 && isModelsLoaded && (
+                <div className="mb-4 space-y-2">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">
+                    <span>AI Engine Loading</span>
+                    <span>{modelLoadProgress}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${modelLoadProgress}%` }}
+                      className="h-full bg-veritas-indigo"
+                    />
+                  </div>
+                </div>
               )}
-            >
-              Join now
-            </button>
+
+              <button 
+                onClick={handleJoin}
+                disabled={!isFaceDetected || !!cameraError || isInitializing || isPreparing || modelLoadProgress < 100}
+                className={cn(
+                  "w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-3",
+                  (!isFaceDetected || !!cameraError || isInitializing || isPreparing || modelLoadProgress < 100)
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-veritas-deep to-veritas-indigo text-white hover:opacity-95 active:scale-[0.98]"
+                )}
+              >
+                {isPreparing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Preparing...
+                  </>
+                ) : (
+                  "Join now"
+                )}
+              </button>
             <button 
               onClick={onLeave}
               className="w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all"

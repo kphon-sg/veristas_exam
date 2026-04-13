@@ -16,6 +16,7 @@ import notificationRoutes from "./server/routes/notification.js";
 import systemRoutes from "./server/routes/system.js";
 import classRoutes from "./server/routes/class.js";
 import userRoutes from "./server/routes/user.js";
+import proctoringRoutes from "./server/routes/proctoring.js";
 
 dotenv.config();
 
@@ -26,7 +27,26 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(cors());
+  // CORS Configuration
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    process.env.FRONTEND_URL,
+  ].filter(Boolean) as string[];
+
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true
+  }));
+
   app.use(express.json());
 
   // Initialize Database
@@ -65,6 +85,7 @@ async function startServer() {
   apiRouter.use("/teacher", teacherRoutes);
   apiRouter.use("/notifications", notificationRoutes);
   apiRouter.use("/user", userRoutes);
+  apiRouter.use("/proctoring", proctoringRoutes);
 
   app.use("/api", apiRouter);
 

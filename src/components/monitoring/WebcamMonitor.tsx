@@ -3,6 +3,7 @@ import { CameraOff, AlertCircle, BadgeCheck, Scan } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFaceDetection } from '../../hooks/useFaceDetection';
+import fixWebmDuration from 'fix-webm-duration';
 
 interface WebcamMonitorProps {
   onDetection: (type: string, snapshot?: string) => void;
@@ -12,6 +13,8 @@ interface WebcamMonitorProps {
   showIdentityVerified?: boolean;
   isExamRunning?: boolean;
   stream?: MediaStream | null;
+  submissionId?: number | null;
+  token?: string | null;
 }
 
 export const WebcamMonitor: React.FC<WebcamMonitorProps> = ({ 
@@ -21,11 +24,144 @@ export const WebcamMonitor: React.FC<WebcamMonitorProps> = ({
   isDetectionActive,
   showIdentityVerified = true,
   isExamRunning = false,
-  stream = null
+  stream = null,
+  submissionId = null,
+  token = null
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const bufferRef = useRef<Blob[]>([]);
+  const activeRecordings = useRef<Set<string>>(new Set());
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isModelsLoaded, setIsModelsLoaded] = useState(true);
+
+  // Video Buffer Management
+  useEffect(() => {
+    if (isExamRunning && isCameraActive && videoRef.current?.srcObject) {
+      const mediaStream = videoRef.current.srcObject as MediaStream;
+      
+      try {
+        const recorder = new MediaRecorder(mediaStream, { 
+          mimeType: 'video/webm;codecs=vp8' 
+        });
+        
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            bufferRef.current.push(e.data);
+            // Keep last 10-15 seconds (assuming 1s chunks)
+            if (bufferRef.current.length > 15) {
+              bufferRef.current.shift();
+            }
+          }
+        };
+
+        recorder.start(1000); // 1s chunks
+        mediaRecorderRef.current = recorder;
+
+        return () => {
+          if (recorder.state !== 'inactive') recorder.stop();
+          bufferRef.current = [];
+        };
+      } catch (err) {
+        console.error("[Proctoring] MediaRecorder error:", err);
+      }
+    }
+  }, [isExamRunning, isCameraActive]);
+
+  const captureEvidence = async (violationType: string) => {
+    if (!videoRef.current || !submissionId || !token || !stream) return;
+
+    // Prevent "Race Conditions": Don't start a new recording for the same type if one is active
+    if (activeRecordings.current.has(violationType)) {
+      console.log(`[Proctoring] Recording already in progress for: ${violationType}`);
+      return;
+    }
+
+    activeRecordings.current.add(violationType);
+    console.log(`[Proctoring] Starting independent recording block for: ${violationType}`);
+
+    try {
+      // Independent Recording Block: Dedicated instance for this violation
+      const snippetRecorder = new MediaRecorder(stream, { 
+        mimeType: 'video/webm;codecs=vp8' 
+      });
+      
+      const chunks: Blob[] = [];
+      const startTime = Date.now();
+
+      snippetRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      snippetRecorder.onstop = async () => {
+        const duration = Date.now() - startTime;
+        const rawBlob = new Blob(chunks, { type: 'video/webm' });
+
+        // Metadata Injection: Fix missing duration in WebM
+        fixWebmDuration(rawBlob, duration, async (fixedBlob) => {
+          const formData = new FormData();
+          formData.append('evidence', fixedBlob, `snippet-${violationType}-${Date.now()}.webm`);
+          formData.append('submissionId', submissionId.toString());
+          formData.append('violationType', violationType);
+          formData.append('evidenceType', 'VIDEO');
+          formData.append('timestamp', new Date().toISOString());
+          formData.append('confidenceScore', '0.9'); // Default or calculated
+
+          try {
+            const response = await fetch('/api/proctoring/log-violation', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+              body: formData
+            });
+            
+            if (!response.ok) throw new Error("Upload failed");
+            console.log(`[Proctoring] Successfully uploaded fixed snippet for: ${violationType}`);
+          } catch (err) {
+            console.error("[Proctoring] Failed to upload video snippet:", err);
+          } finally {
+            // Clear state after upload is finalized
+            activeRecordings.current.delete(violationType);
+          }
+        });
+      };
+
+      // Record for 8 seconds to capture full context
+      snippetRecorder.start();
+      setTimeout(() => {
+        if (snippetRecorder.state !== 'inactive') {
+          snippetRecorder.stop();
+        }
+      }, 8000);
+
+    } catch (err) {
+      console.error("[Proctoring] Snippet recorder error:", err);
+      activeRecordings.current.delete(violationType);
+    }
+  };
+
+  const handleInternalDetection = (type: string) => {
+    onDetection(type);
+    if (isExamRunning && submissionId && type !== 'valid') {
+      // 1. Instant Log to violations table
+      fetch('/api/proctoring/log', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          attempt_id: submissionId,
+          violation_type: type,
+          timestamp: new Date().toISOString(),
+          severity: type === 'looking_away' ? 'MEDIUM' : 'HIGH',
+          message: `AI detected ${type.replace('_', ' ')}`
+        })
+      }).catch(err => console.error("[Proctoring] Failed to send instant log:", err));
+
+      // 2. Capture Evidence (Snapshot/Video)
+      captureEvidence(type);
+    }
+  };
 
   // Camera management
   useEffect(() => {
@@ -89,7 +225,7 @@ export const WebcamMonitor: React.FC<WebcamMonitorProps> = ({
     isModelsLoaded,
     isDetectionActive,
     videoRef,
-    onDetection,
+    onDetection: handleInternalDetection,
     onFaceStatusChange
   });
 

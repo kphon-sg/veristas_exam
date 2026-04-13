@@ -8,6 +8,7 @@ interface UseFaceDetectionProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   onDetection: (type: string) => void;
   onFaceStatusChange?: (isDetected: boolean) => void;
+  onLoadProgress?: (progress: number) => void;
 }
 
 export const useFaceDetection = ({
@@ -16,13 +17,15 @@ export const useFaceDetection = ({
   isDetectionActive,
   videoRef,
   onDetection,
-  onFaceStatusChange
+  onFaceStatusChange,
+  onLoadProgress
 }: UseFaceDetectionProps) => {
   const [isFaceDetected, setIsFaceDetected] = useState(false);
   const [isLookingAway, setIsLookingAway] = useState(false);
   const [latency, setLatency] = useState(0);
   const [fps, setFps] = useState(0);
   const [faceConfidence, setFaceConfidence] = useState(0);
+  const [isWarmingUp, setIsWarmingUp] = useState(false);
   
   const lastReportedTypeRef = useRef<string | null>(null);
   const awayStartTimeRef = useRef<number | null>(null);
@@ -30,6 +33,8 @@ export const useFaceDetection = ({
   const awayGlitchCounterRef = useRef(0);
   const missingGlitchCounterRef = useRef(0);
   const isFaceDetectedRef = useRef(false);
+  const detectionThrottleRef = useRef<number | null>(null);
+  const isDetectionThrottledRef = useRef(false);
 
   // Pose Memory Refs
   const lastFaceTimestampRef = useRef<number>(0);
@@ -58,9 +63,12 @@ export const useFaceDetection = ({
   useEffect(() => {
     const initFaceLandmarker = async () => {
       try {
+        onLoadProgress?.(10);
         const filesetResolver = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
         );
+        onLoadProgress?.(30);
+        
         const landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
           baseOptions: {
             modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
@@ -69,12 +77,21 @@ export const useFaceDetection = ({
           outputFaceBlendshapes: true,
           runningMode: "VIDEO",
           numFaces: 2,
-          minFaceDetectionConfidence: 0.3, // Lowered to help detect side profiles
+          minFaceDetectionConfidence: 0.3,
           minFacePresenceConfidence: 0.3,
           minTrackingConfidence: 0.3
         });
+        
+        onLoadProgress?.(80);
         faceLandmarkerRef.current = landmarker;
-        console.log("[useFaceDetection] MediaPipe Face Landmarker initialized");
+        
+        // Warm up the model with a dummy detection if possible or just wait
+        setIsWarmingUp(true);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setIsWarmingUp(false);
+        
+        onLoadProgress?.(100);
+        console.log("[useFaceDetection] MediaPipe Face Landmarker initialized and warmed up");
       } catch (err) {
         console.error("[useFaceDetection] Error initializing MediaPipe:", err);
       }
@@ -84,6 +101,26 @@ export const useFaceDetection = ({
       initFaceLandmarker();
     }
   }, [isModelsLoaded]);
+
+  // Detection Throttling Logic
+  useEffect(() => {
+    if (isDetectionActive) {
+      isDetectionThrottledRef.current = true;
+      if (detectionThrottleRef.current) clearTimeout(detectionThrottleRef.current);
+      
+      detectionThrottleRef.current = window.setTimeout(() => {
+        isDetectionThrottledRef.current = false;
+        console.log("[useFaceDetection] Detection throttle lifted");
+      }, 2000); // 2-second throttle as requested
+    } else {
+      isDetectionThrottledRef.current = false;
+      if (detectionThrottleRef.current) clearTimeout(detectionThrottleRef.current);
+    }
+    
+    return () => {
+      if (detectionThrottleRef.current) clearTimeout(detectionThrottleRef.current);
+    };
+  }, [isDetectionActive]);
 
   useEffect(() => {
     if (!isCameraActive || !isModelsLoaded || !videoRef.current) {
@@ -96,20 +133,25 @@ export const useFaceDetection = ({
     let frameCount = 0;
     
     // Requirements from user
-    const LOOKING_AWAY_DELAY = 2000; // 2-second rule for active detection
-    const MISSING_DETECTION_DELAY = 2000; // Increased to 2 seconds as requested
-    const SIDE_PROFILE_GRACE_PERIOD = 3000; // 3-second grace period for side profiles
-    const DOWNWARD_GAZE_GRACE_PERIOD = 2500; // Grace period for downward gaze
+    const LOOKING_AWAY_DELAY = 1500; // 1.5-second grace period as requested
+    const MISSING_DETECTION_DELAY = 2000; 
+    const SIDE_PROFILE_GRACE_PERIOD = 3000; 
+    const DOWNWARD_GAZE_GRACE_PERIOD = 2500; 
     const GLITCH_THRESHOLD = 8;
     
     // Thresholds in degrees
-    const YAW_THRESHOLD_DEG = 25;
-    const PITCH_UP_THRESHOLD_DEG = 15;   // Lowered threshold for looking up (more sensitive)
-    const PITCH_DOWN_THRESHOLD_DEG = 20; // Threshold for looking down (phone/paper)
-    const SIDE_PROFILE_YAW_THRESHOLD = 30; // Threshold to trigger grace period
+    const YAW_THRESHOLD_DEG = 20;        // Lowered from 25
+    const PITCH_UP_THRESHOLD_DEG = 10;   // Lowered from 15 (more sensitive to looking up)
+    const PITCH_DOWN_THRESHOLD_DEG = 15; // Lowered from 20
+    const SIDE_PROFILE_YAW_THRESHOLD = 30; 
+
+    // Iris Gaze Thresholds (Normalized 0-1 within eye socket)
+    const IRIS_UP_THRESHOLD = 0.25;
+    const IRIS_DOWN_THRESHOLD = 0.75;
+    const IRIS_SIDE_THRESHOLD = 0.25;
 
     const detect = async () => {
-      if (!videoRef.current || !isCameraActive || !faceLandmarkerRef.current) {
+      if (!videoRef.current || !isCameraActive || !faceLandmarkerRef.current || isDetectionThrottledRef.current) {
         requestRef = requestAnimationFrame(detect);
         return;
       }
@@ -175,6 +217,35 @@ export const useFaceDetection = ({
           const pitchRad = Math.asin(Math.max(-1, Math.min(1, (noseOffsetY / faceHeight) * 3.0)));
           currentPitch = -(pitchRad * (180 / Math.PI));
 
+          // Iris-Based Gaze Tracking (Detecting eye movement independent of head pose)
+          let isIrisLookingAway = false;
+          if (landmarks.length >= 478) {
+            const leftIris = landmarks[468];
+            const rightIris = landmarks[473];
+            
+            // Left Eye Vertical Range (Top: 159, Bottom: 145)
+            const leftEyeTop = landmarks[159].y;
+            const leftEyeBottom = landmarks[145].y;
+            const leftIrisY = (leftIris.y - leftEyeTop) / (leftEyeBottom - leftEyeTop);
+
+            // Right Eye Vertical Range (Top: 386, Bottom: 374)
+            const rightEyeTop = landmarks[386].y;
+            const rightEyeBottom = landmarks[374].y;
+            const rightIrisY = (rightIris.y - rightEyeTop) / (rightEyeBottom - rightEyeTop);
+
+            const avgIrisY = (leftIrisY + rightIrisY) / 2;
+            
+            // Horizontal check (Left: 33, Right: 133 for left eye; Left: 362, Right: 263 for right eye)
+            const leftIrisX = (leftIris.x - landmarks[33].x) / (landmarks[133].x - landmarks[33].x);
+            const rightIrisX = (rightIris.x - landmarks[362].x) / (landmarks[263].x - landmarks[362].x);
+            const avgIrisX = (leftIrisX + rightIrisX) / 2;
+
+            if (avgIrisY < IRIS_UP_THRESHOLD || avgIrisY > IRIS_DOWN_THRESHOLD || 
+                avgIrisX < IRIS_SIDE_THRESHOLD || avgIrisX > (1 - IRIS_SIDE_THRESHOLD)) {
+              isIrisLookingAway = true;
+            }
+          }
+
           // Update Pose Memory (Last 10 frames)
           lastFaceTimestampRef.current = endTime;
           yawHistoryRef.current.push(currentYaw);
@@ -185,7 +256,7 @@ export const useFaceDetection = ({
           const isLookingUp = currentPitch > PITCH_UP_THRESHOLD_DEG;
           const isLookingDown = currentPitch < -PITCH_DOWN_THRESHOLD_DEG;
 
-          if (isLookingAwayYaw || isLookingUp || isLookingDown) {
+          if (isLookingAwayYaw || isLookingUp || isLookingDown || isIrisLookingAway) {
             frameViolation = 'looking_away';
           } else {
             frameViolation = 'valid';

@@ -143,7 +143,7 @@ export async function initDatabase() {
           start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
           end_time DATETIME,
           submitted_at DATETIME,
-          status ENUM('IN_PROGRESS', 'SUBMITTED', 'GRADED', 'TERMINATED', 'AUTO_TERMINATED') DEFAULT 'IN_PROGRESS',
+          status ENUM('IN_PROGRESS', 'PENDING', 'SUBMITTED', 'GRADED', 'TERMINATED', 'AUTO_TERMINATED') DEFAULT 'IN_PROGRESS',
           score REAL DEFAULT 0,
           total_score REAL DEFAULT 0,
           duration_seconds INT,
@@ -166,6 +166,50 @@ export async function initDatabase() {
           FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `);
+
+    // Ensure columns exist for existing databases
+    const columnsToAdd = [
+      { table: 'submissions', column: 'student_id', def: 'INT NOT NULL AFTER quiz_id' },
+      { table: 'submissions', column: 'browser_info', def: 'TEXT' },
+      { table: 'submissions', column: 'ip_address', def: 'VARCHAR(255)' },
+      { table: 'submissions', column: 'risk_score', def: 'REAL DEFAULT 0' },
+      { table: 'submissions', column: 'cheating_status', def: "ENUM('NONE', 'LOW_RISK', 'MEDIUM_RISK', 'HIGH_RISK', 'NO_CHEATING', 'SUSPICIOUS', 'CHEATING') DEFAULT 'NONE'" },
+      { table: 'submissions', column: 'evaluation_timestamp', def: 'DATETIME' },
+      { table: 'submissions', column: 'total_violation_count', def: 'INT DEFAULT 0' },
+      { table: 'submissions', column: 'low_violation_count', def: 'INT DEFAULT 0' },
+      { table: 'submissions', column: 'medium_violation_count', def: 'INT DEFAULT 0' },
+      { table: 'submissions', column: 'high_violation_count', def: 'INT DEFAULT 0' },
+      { table: 'submissions', column: 'tab_switch_count', def: 'INT DEFAULT 0' },
+      { table: 'submissions', column: 'face_missing_count', def: 'INT DEFAULT 0' },
+      { table: 'submissions', column: 'looking_away_count', def: 'INT DEFAULT 0' },
+      { table: 'submissions', column: 'multiple_faces_count', def: 'INT DEFAULT 0' },
+      { table: 'violations', column: 'student_id', def: 'INT NOT NULL AFTER submission_id' },
+      { table: 'violations', column: 'browser_info', def: 'TEXT' },
+      { table: 'violations', column: 'ip_address', def: 'VARCHAR(255)' },
+      { table: 'student_answers', column: 'awarded_points', def: 'REAL DEFAULT 0' }
+    ];
+
+    // Update ENUM for status if needed
+    try {
+      await db.query("ALTER TABLE submissions MODIFY COLUMN status ENUM('IN_PROGRESS', 'PENDING', 'SUBMITTED', 'GRADED', 'TERMINATED', 'AUTO_TERMINATED') DEFAULT 'IN_PROGRESS'");
+      console.log("[DB] Updated submissions.status ENUM to include PENDING");
+    } catch (err: any) {
+      console.error("[DB] Error updating submissions.status ENUM:", err.message);
+    }
+
+    for (const item of columnsToAdd) {
+      try {
+        await db.query(`ALTER TABLE ${item.table} ADD COLUMN ${item.column} ${item.def}`);
+        console.log(`[DB] Added column ${item.column} to ${item.table}`);
+      } catch (err: any) {
+        if (err.code === 'ER_DUP_COLUMN_NAME' || err.errno === 1060) {
+          // Column already exists, ignore
+        } else {
+          console.error(`[DB] Error adding column ${item.column} to ${item.table}:`, err.message);
+        }
+      }
+    }
+
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS student_answers (
@@ -261,6 +305,33 @@ export async function initDatabase() {
           bio TEXT,
           gpa REAL,
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS violation_logs (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          submission_id INT NOT NULL,
+          violation_type VARCHAR(255) NOT NULL,
+          evidence_type ENUM('IMAGE', 'VIDEO') NOT NULL,
+          file_url TEXT NOT NULL,
+          confidence_score REAL,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS proctoring_logs (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          submission_id INT NOT NULL,
+          event_type VARCHAR(255) NOT NULL,
+          severity ENUM('LOW', 'MEDIUM', 'HIGH', 'NONE') DEFAULT 'NONE',
+          start_time DATETIME NOT NULL,
+          end_time DATETIME,
+          duration INT DEFAULT 0,
+          message TEXT,
+          FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
       )
     `);
 

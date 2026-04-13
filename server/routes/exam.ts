@@ -23,7 +23,7 @@ router.get("/student/pending-quizzes", async (req: any, res) => {
       WHERE e.student_id = ? 
         AND q.status IN ('PUBLISHED', 'EXPIRED')
         AND q.id NOT IN (
-          SELECT quiz_id FROM submissions WHERE student_id = ? AND status IN ('SUBMITTED', 'GRADED')
+          SELECT quiz_id FROM submissions WHERE student_id = ? AND status IN ('SUBMITTED', 'GRADED', 'PENDING')
         )
     `;
     const params: any[] = [studentId, studentId];
@@ -67,7 +67,7 @@ router.get("/student/dashboard-overview", async (req: any, res) => {
         COALESCE(AVG(CASE WHEN s.status = 'GRADED' THEN (s.score / s.total_score) * 100 END), 0) as averageScore
       FROM course_enrollments e
       JOIN quizzes q ON e.course_id = q.course_id
-      LEFT JOIN submissions s ON q.id = s.quiz_id AND s.student_id = e.student_id AND s.status IN ('SUBMITTED', 'GRADED')
+      LEFT JOIN submissions s ON q.id = s.quiz_id AND s.student_id = e.student_id AND s.status IN ('SUBMITTED', 'GRADED', 'PENDING')
       WHERE e.student_id = ? AND q.status IN ('PUBLISHED', 'EXPIRED')
     `, [studentId]);
 
@@ -110,7 +110,7 @@ router.get("/student/dashboard-stats", async (req: any, res) => {
         COALESCE(AVG(CASE WHEN s.status = 'GRADED' THEN (s.score / s.total_score) * 100 END), 0) as averageScore
       FROM course_enrollments e
       JOIN quizzes q ON e.course_id = q.course_id
-      LEFT JOIN submissions s ON q.id = s.quiz_id AND s.student_id = e.student_id AND s.status IN ('SUBMITTED', 'GRADED')
+      LEFT JOIN submissions s ON q.id = s.quiz_id AND s.student_id = e.student_id AND s.status IN ('SUBMITTED', 'GRADED', 'PENDING')
       WHERE e.student_id = ? AND q.status IN ('PUBLISHED', 'EXPIRED')
     `, [studentId]);
 
@@ -427,19 +427,37 @@ router.post("/submissions", async (req, res) => {
     }
     
     const hasEssay = (questions as any[]).some(q => q.question_type === 'ESSAY');
-    const initialStatus = hasEssay ? 'SUBMITTED' : 'GRADED';
+    const initialStatus = 'PENDING';
     
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
       
-      const [subResult]: any = await connection.query(`
-        INSERT INTO submissions (
-          quiz_id, student_id, quiz_name, status, total_score, score, start_time, submitted_at, duration_seconds, browser_info, ip_address
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [Number(quizId), Number(studentId), quizName, initialStatus, maxPossibleScore, earnedScore, toDBDateTime(startTime), toDBDateTime(submittedAt), duration, browserInfo || null, ipAddress || null]);
-      
-      const submissionId = subResult.insertId;
+      // Check for existing IN_PROGRESS submission
+      const [existingSub]: any = await connection.query(
+        "SELECT id FROM submissions WHERE quiz_id = ? AND student_id = ? AND status = 'IN_PROGRESS'",
+        [Number(quizId), Number(studentId)]
+      );
+
+      let submissionId;
+      if (existingSub.length > 0) {
+        submissionId = existingSub[0].id;
+        await connection.query(`
+          UPDATE submissions SET 
+            quiz_name = ?, status = ?, total_score = ?, score = ?, start_time = ?, submitted_at = ?, duration_seconds = ?, browser_info = ?, ip_address = ?
+          WHERE id = ?
+        `, [quizName, initialStatus, maxPossibleScore, earnedScore, toDBDateTime(startTime), toDBDateTime(submittedAt), duration, browserInfo || null, ipAddress || null, submissionId]);
+        
+        // Clear old answers if updating
+        await connection.query("DELETE FROM student_answers WHERE submission_id = ?", [submissionId]);
+      } else {
+        const [subResult]: any = await connection.query(`
+          INSERT INTO submissions (
+            quiz_id, student_id, quiz_name, status, total_score, score, start_time, submitted_at, duration_seconds, browser_info, ip_address
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [Number(quizId), Number(studentId), quizName, initialStatus, maxPossibleScore, earnedScore, toDBDateTime(startTime), toDBDateTime(submittedAt), duration, browserInfo || null, ipAddress || null]);
+        submissionId = subResult.insertId;
+      }
 
       await connection.query("UPDATE violations SET submission_id = ? WHERE student_id = ? AND submission_id IS NULL", [submissionId, studentId]);
 
@@ -515,7 +533,7 @@ router.post("/submissions", async (req, res) => {
 
 router.put("/submissions/:id", async (req, res) => {
   try {
-    const { score, answers, feedback } = req.body;
+    const { score, answers, feedback, finalize } = req.body;
     const subId = req.params.id;
     const { teacherId } = req.query;
     
@@ -531,7 +549,8 @@ router.put("/submissions/:id", async (req, res) => {
     try {
       await connection.beginTransaction();
       
-      await connection.query("UPDATE submissions SET score = ?, status = 'GRADED', teacher_feedback = ? WHERE id = ?", [score || 0, feedback || null, subId]);
+      const newStatus = finalize ? 'GRADED' : 'PENDING';
+      await connection.query("UPDATE submissions SET score = ?, status = ?, teacher_feedback = ? WHERE id = ?", [score || 0, newStatus, feedback || null, subId]);
       
       if (Array.isArray(answers)) {
         for (const ans of answers) {
@@ -559,10 +578,12 @@ router.put("/submissions/:id", async (req, res) => {
     const quizInfo = quizInfoRows[0];
     const courseInfo = quizInfo ? ` in course ${quizInfo.course_code} - ${quizInfo.courseName}` : '';
 
-    if (teacherId) {
-      await logActivity(Number(teacherId), 'QUIZ_GRADED', 'SUBMISSION', Number(subId), `Graded submission for student ${sub.studentName}${courseInfo}. Score: ${score}/${sub.total_score}`);
+    if (finalize) {
+      if (teacherId) {
+        await logActivity(Number(teacherId), 'QUIZ_GRADED', 'SUBMISSION', Number(subId), `Graded submission for student ${sub.studentName}${courseInfo}. Score: ${score}/${sub.total_score}`);
+      }
+      await logActivity(sub.student_id, 'QUIZ_GRADED', 'SUBMISSION', Number(subId), `Your quiz "${sub.quiz_name}"${courseInfo} has been graded. Score: ${score}/${sub.total_score}`);
     }
-    await logActivity(sub.student_id, 'QUIZ_GRADED', 'SUBMISSION', Number(subId), `Your quiz "${sub.quiz_name}"${courseInfo} has been graded. Score: ${score}/${sub.total_score}`);
 
     res.json(await mapSubmission(sub));
   } catch (error: any) {
@@ -617,6 +638,74 @@ router.get("/exam/violations", async (req, res) => {
       duration: v.event_duration_seconds
     }));
     res.json(mapped);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/submissions/:id/analysis", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const [subRows]: any = await db.query(`
+      SELECT s.*, u.full_name as studentName, u.student_code
+      FROM submissions s
+      JOIN users u ON s.student_id = u.id
+      WHERE s.id = ?
+    `, [id]);
+    
+    const sub = subRows[0];
+    if (!sub) return res.status(404).json({ error: "Submission not found" });
+
+    const [logRows]: any = await db.query(`
+      SELECT * FROM proctoring_logs 
+      WHERE submission_id = ? 
+      ORDER BY start_time ASC
+    `, [id]);
+
+    const mappedLogs = (logRows as any[]).map(log => ({
+      id: log.id,
+      type: log.event_type,
+      severity: log.severity,
+      startTime: log.start_time,
+      endTime: log.end_time,
+      duration: log.duration,
+      message: log.message
+    }));
+
+    const mappedSub = await mapSubmission(sub);
+
+    res.json({
+      ...mappedSub,
+      proctoringLogs: mappedLogs
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/submissions/:id/evidence", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows]: any = await db.query(`
+      SELECT 
+        id,
+        submission_id as submissionId,
+        violation_type as violation_type,
+        evidence_type as evidence_type,
+        file_url as file_url,
+        confidence_score as confidence_score,
+        timestamp
+      FROM violation_logs 
+      WHERE submission_id = ? 
+      ORDER BY timestamp ASC
+    `, [id]);
+
+    res.json(rows.map((row: any) => ({
+      ...row,
+      file_url: row.file_url || "",
+      violation_type: row.violation_type || "UNKNOWN"
+    })));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

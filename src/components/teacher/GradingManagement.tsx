@@ -33,7 +33,7 @@ export function GradingManagement({ teacherId, onClose, authenticatedFetch, onRe
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
-      const url = `/api/teacher/submissions?teacherId=${teacherId}&status=${activeTab === 'PENDING' ? 'SUBMITTED' : 'GRADED'}`;
+      const url = `/api/teacher/submissions?teacherId=${teacherId}&status=${activeTab === 'PENDING' ? 'PENDING' : 'GRADED'}`;
       const response = await authenticatedFetch(url);
       if (response.ok) {
         const data = await response.json();

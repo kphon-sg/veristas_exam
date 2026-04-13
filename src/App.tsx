@@ -122,6 +122,7 @@ export default function App() {
   const [isJoiningCourse, setIsJoiningCourse] = useState(false);
   const [selectedTeacherCourseId, setSelectedTeacherCourseId] = useState<number | null>(null);
   const [reviewingSubmission, setReviewingSubmission] = useState<any>(null);
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<number | null>(null);
 
   // Advanced Course Search Filters
   const [courseNameFilter, setCourseNameFilter] = useState('');
@@ -412,6 +413,27 @@ export default function App() {
 
     setIsSubmitting(true);
 
+    // Close any active proctoring logs before final submission
+    const now = Date.now();
+    const activeViolations = events.filter(e => !e.endTime);
+    for (const violation of activeViolations) {
+      if (user && currentSubmissionId) {
+        const duration = Math.round((now - violation.timestamp) / 1000);
+        authenticatedFetch('/api/proctoring/log-event', {
+          method: 'POST',
+          body: JSON.stringify({
+            submissionId: currentSubmissionId,
+            eventType: violation.type,
+            severity: violation.severity.toUpperCase(),
+            startTime: new Date(violation.timestamp).toISOString(),
+            endTime: new Date(now).toISOString(),
+            duration: duration,
+            message: violation.message
+          })
+        }).catch(err => console.error("Error logging final proctoring event:", err));
+      }
+    }
+
     // Payload Verification: Gather all answers and proctoring counts
     const faceMissingCount = events.filter(e => e.type === 'face_missing').length;
     const lookingAwayCount = events.filter(e => e.type === 'looking_away').length;
@@ -452,6 +474,7 @@ export default function App() {
         
         // State Reset: Clear timer persistence and stop camera
         localStorage.removeItem(`quiz_end_time_${selectedQuiz.id}_${user.id}`);
+        localStorage.removeItem(`current_submission_id_${selectedQuiz.id}_${user.id}`);
         
         if (activeStream) {
           activeStream.getTracks().forEach(track => track.stop());
@@ -625,29 +648,30 @@ export default function App() {
   };
 
   const handleDetection = useCallback((type: string, snapshot?: string, source: 'camera' | 'browser' = 'camera') => {
-    console.log(`[App] handleDetection: type=${type}, source=${source}, status=${examState.status}, hasQuiz=${!!selectedQuiz}`);
+    console.log(`[App] handleDetection: type=${type}, source=${source}, status=${examState.status}, hasQuiz=${!!selectedQuiz}, submissionId=${currentSubmissionId}`);
     // Allow detection during setup for feedback, but only log if running or setup
     if (examState.status === 'idle' && !selectedQuiz) {
       console.log(`[App] handleDetection ignored: idle and no quiz`);
       return;
     }
 
-    const messages: Record<string, { msg: string; severity: 'low' | 'medium' | 'high' | 'none' }> = {
-      face_missing: { msg: "No face detected in webcam stream.", severity: 'high' },
-      multiple_faces: { msg: "Multiple faces detected in frame.", severity: 'high' },
-      looking_away: { msg: "Student is looking away from the screen.", severity: 'medium' },
-      tab_switch: { msg: "Browser tab switch detected.", severity: 'high' },
-      app_blur: { msg: "Application lost focus.", severity: 'medium' },
-      valid: { msg: "Monitoring active. No violations detected.", severity: 'none' }
+    const messages: Record<string, { msg: string; severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'NONE' }> = {
+      face_missing: { msg: "No face detected in webcam stream.", severity: 'HIGH' },
+      multiple_faces: { msg: "Multiple faces detected in frame.", severity: 'HIGH' },
+      looking_away: { msg: "Student is looking away from the screen.", severity: 'MEDIUM' },
+      tab_switch: { msg: "Browser tab switch detected.", severity: 'HIGH' },
+      app_blur: { msg: "Application lost focus.", severity: 'MEDIUM' },
+      phone_detected: { msg: "Mobile device detected in frame.", severity: 'HIGH' },
+      valid: { msg: "Monitoring active. No violations detected.", severity: 'NONE' }
     };
 
     const CAMERA_VIOLATIONS = ['face_missing', 'multiple_faces', 'looking_away'];
     const BROWSER_VIOLATIONS = ['tab_switch', 'app_blur'];
 
+    const now = Date.now();
+
     setEvents(prev => {
-      const now = Date.now();
-      const lastEvent = prev[0];
-      console.log(`[App] setEvents: type=${type}, lastEvent=${lastEvent?.type}, lastEventEndTime=${lastEvent?.endTime}`);
+      console.log(`[App] setEvents: type=${type}, lastEvent=${prev[0]?.type}`);
 
       if (type === 'valid') {
         // Find the most recent active violation for this source and close it
@@ -659,7 +683,26 @@ export default function App() {
         );
 
         if (activeViolationIdx !== -1) {
-          console.log(`[App] Closing violation: ${prev[activeViolationIdx].type} at index ${activeViolationIdx}`);
+          const violation = prev[activeViolationIdx];
+          console.log(`[App] Closing violation: ${violation.type} at index ${activeViolationIdx}`);
+          
+          // Report to backend when violation ends
+          if (user && currentSubmissionId && examState.status === 'running') {
+            const duration = Math.round((now - violation.timestamp) / 1000);
+            authenticatedFetch('/api/proctoring/log-event', {
+              method: 'POST',
+              body: JSON.stringify({
+                submissionId: currentSubmissionId,
+                eventType: violation.type,
+                severity: violation.severity.toUpperCase(),
+                startTime: new Date(violation.timestamp).toISOString(),
+                endTime: new Date(now).toISOString(),
+                duration: duration,
+                message: violation.message
+              })
+            }).catch(err => console.error("Error logging proctoring event:", err));
+          }
+
           return prev.map((e, idx) => idx === activeViolationIdx ? { ...e, endTime: now } : e);
         }
         return prev;
@@ -683,6 +726,22 @@ export default function App() {
           const newIsBrowser = BROWSER_VIOLATIONS.includes(type);
 
           if ((newIsCamera && isCameraViolation) || (newIsBrowser && isBrowserViolation)) {
+            // Report the closed violation to backend
+            if (user && currentSubmissionId && examState.status === 'running') {
+              const duration = Math.round((now - e.timestamp) / 1000);
+              authenticatedFetch('/api/proctoring/log-event', {
+                method: 'POST',
+                body: JSON.stringify({
+                  submissionId: currentSubmissionId,
+                  eventType: e.type,
+                  severity: e.severity.toUpperCase(),
+                  startTime: new Date(e.timestamp).toISOString(),
+                  endTime: new Date(now).toISOString(),
+                  duration: duration,
+                  message: e.message
+                })
+              }).catch(err => console.error("Error logging proctoring event:", err));
+            }
             return { ...e, endTime: now };
           }
         }
@@ -694,16 +753,17 @@ export default function App() {
         timestamp: now,
         type: type as any,
         message: messages[type]?.msg || "Suspicious behavior detected.",
-        severity: messages[type]?.severity || 'medium',
+        severity: (messages[type]?.severity || 'MEDIUM').toLowerCase() as any,
         snapshot
       };
 
-      // Report violation to backend only when it starts during actual exam
+      // Also report to the old violations table for compatibility/evidence
       if (user && type !== 'valid' && examState.status === 'running') {
         authenticatedFetch('/api/exam/report-violation', {
           method: 'POST',
           body: JSON.stringify({
             studentId: user.id,
+            submissionId: currentSubmissionId,
             type: event.type,
             message: event.message,
             severity: event.severity,
@@ -714,7 +774,7 @@ export default function App() {
 
       return [event, ...updatedPrev].slice(0, 50);
     });
-  }, [user, examState.status, selectedQuiz]);
+  }, [user, examState.status, selectedQuiz, currentSubmissionId, authenticatedFetch]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -776,6 +836,10 @@ export default function App() {
         const remainingTime = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
         
         if (remainingTime > 0) {
+          const savedSubId = localStorage.getItem(`current_submission_id_${selectedQuiz.id}_${user.id}`);
+          if (savedSubId) {
+            setCurrentSubmissionId(parseInt(savedSubId));
+          }
           setExamState(prev => ({
             ...prev,
             status: 'running',
@@ -830,10 +894,17 @@ export default function App() {
     }));
 
     try {
-      await authenticatedFetch(`/api/quizzes/${activeQuiz.id}/start`, {
+      const res = await authenticatedFetch(`/api/quizzes/${activeQuiz.id}/start`, {
         method: 'POST',
         body: JSON.stringify({ studentId: user.id })
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.submissionId) {
+          setCurrentSubmissionId(data.submissionId);
+          localStorage.setItem(`current_submission_id_${activeQuiz.id}_${user.id}`, data.submissionId.toString());
+        }
+      }
     } catch (err) {
       console.error("Error logging quiz start:", err);
     }
@@ -1080,6 +1151,8 @@ export default function App() {
                           showIdentityVerified={false}
                           isExamRunning={true}
                           stream={activeStream}
+                          submissionId={currentSubmissionId}
+                          token={token}
                         />
                       </div>
                     </div>
@@ -1786,6 +1859,8 @@ export default function App() {
                         isDetectionActive={isMonitoring} 
                         showIdentityVerified={examState.status === 'idle'}
                         isExamRunning={false}
+                        submissionId={currentSubmissionId}
+                        token={token}
                       />
                     </div>
                   </div>
