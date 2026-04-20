@@ -61,7 +61,7 @@ export const StudentDashboard = ({ user: authUser, onQuizSelect }: { user: any, 
         // 3. Fetch All Quizzes for the student
         const quizzesRes = await fetch(`/api/quizzes?studentId=${authUser.id}`, { headers });
         const quizzesData = await quizzesRes.json();
-        setAllQuizzes(quizzesData);
+        setAllQuizzes(Array.isArray(quizzesData) ? quizzesData : []);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -81,7 +81,7 @@ export const StudentDashboard = ({ user: authUser, onQuizSelect }: { user: any, 
     { label: 'Avg. Score', value: `${stats.averageScore || 0}%`, icon: Trophy, trend: 'Overall', filter: 'graded' },
   ];
 
-  const filteredQuizzes = allQuizzes.filter(q => {
+  const filteredQuizzes = (Array.isArray(allQuizzes) ? allQuizzes : []).filter(q => {
     const matchesFilter = quizFilter === 'all' 
       ? true 
       : quizFilter === 'completed' 
