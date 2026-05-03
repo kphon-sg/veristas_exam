@@ -1,0 +1,19 @@
+HUONG DAN CAI DAT DU AN (CHAY MOI LAN KHI DOWNLOAD CODE)
+===========================================================
+
+Buoc 1: Mo Terminal (PowerShell hoac CMD) tai thu muc nay.
+
+Buoc 2: Chay lenh cai dat (Bat buoc phai chay lenh nay dau tien):
+npm install
+
+Buoc 3: Doi cho den khi hien thong bao thanh cong.
+
+Buoc 4: Chay du an:
+npm run dev
+
+-----------------------------------------------------------
+Giai thich cac loi thuong gap:
+1. 'vite' is not recognized: Do ban chua chay 'npm install'.
+2. Cannot find module: Do ban chua chay 'npm install' hoac bi loi trong qua trinh tai.
+3. Loi Database: Hay dam bao MySQL cua ban dang chay va thong tin trong file 
+   '.env' hoac 'server/config/database.ts' la dung.

@@ -1,0 +1,5 @@
+{
+  "name": "Edge AI Exam Monitor",
+  "description": "Real-time behavior monitoring for online examinations using Edge AI and computer vision.",
+  "requestFramePermissions": ["camera"]
+}
