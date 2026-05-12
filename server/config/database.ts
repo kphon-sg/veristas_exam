@@ -1,7 +1,7 @@
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({ quiet: true } as any);
 
 // Initialize MySQL connection pool
 export const pool = mysql.createPool({

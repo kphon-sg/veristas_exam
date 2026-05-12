@@ -18,7 +18,7 @@ import classRoutes from "./server/routes/class.js";
 import userRoutes from "./server/routes/user.js";
 import proctoringRoutes from "./server/routes/proctoring.js";
 
-dotenv.config();
+dotenv.config({ quiet: true } as any);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
